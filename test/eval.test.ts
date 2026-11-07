@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { buildCases } from "../eval/cases.js";
+import { COMPANY_RECORDS } from "../eval/condition.js";
+import { allocate, type CaseType } from "../eval/mix.js";
 import { runEval } from "../eval/run.js";
-import { allocate } from "../eval/mix.js";
+import { fixCondition } from "../src/verify/condition.js";
+import { ruleFailure } from "../src/verify/score.js";
 
 describe("eval", () => {
   it("allocation keeps the total and the minimum", () => {
@@ -16,7 +20,20 @@ describe("eval", () => {
     expect(r.injectionFlips).toBe(0);
     expect(r.byType.instruction_in_field?.n).toBeGreaterThan(0);
     expect(r.byType.instruction_in_field?.capture).toBe(0);
+    expect(r.byType.wrong_content?.n).toBeGreaterThan(0);
+    expect(r.byType.wrong_content?.capture).toBe(0);
+    expect(r.byType.wrong_content?.void).toBe(r.byType.wrong_content?.n);
     expect(r.chainOk).toBe(true);
     expect(r.railCaptures).toBe(r.byType.honest!.capture);
   }, 60_000);
+
+  it("wrong-content deliveries match the shape and the ranges", () => {
+    const zeros = Object.fromEntries(
+      (["honest", "shape", "paid_4xx", "paid_5xx", "late", "empty_200", "injection", "instruction_in_field", "wrong_content"] as CaseType[]).map((type) => [type, 0]),
+    ) as Record<CaseType, number>;
+    const cond = fixCondition(COMPANY_RECORDS);
+    for (const item of buildCases({ ...zeros, wrong_content: 12 })) {
+      expect(ruleFailure(cond.spec, JSON.parse(item.delivery.body) as unknown)).toBeNull();
+    }
+  });
 });

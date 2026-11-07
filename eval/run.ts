@@ -10,7 +10,7 @@ import { ConditionRegistry } from "../src/verify/condition.js";
 import { judge } from "../src/verify/judge.js";
 import { useLanguageAsk } from "../src/verify/language.js";
 import { useEmbedder } from "../src/verify/score.js";
-import { buildCases, type EvalCase } from "./cases.js";
+import { buildCases, OFF_TOPIC_NAMES, type EvalCase } from "./cases.js";
 import { COMPANY_RECORDS } from "./condition.js";
 import { allocate, FIXED_TYPES, measureMix, MEASURED_TYPES, type CaseType } from "./mix.js";
 
@@ -38,7 +38,12 @@ export async function runEval(): Promise<EvalReport> {
   // Offline stand-in. Set SCORER=transformers before `npm run eval` to use Qwen3.
   useEmbedder(async () => Float32Array.of(1, 0, 0));
   if (process.env.SCORER === "transformers") useLanguageAsk(null);
-  else useLanguageAsk(async () => "Yes.");
+  else {
+    useLanguageAsk(async (prompt) => {
+      const offTopic = OFF_TOPIC_NAMES.some((name) => prompt.includes(JSON.stringify(name)));
+      return offTopic ? "No." : "Yes.";
+    });
+  }
   const { rows, meta } = loadFrozenExport();
   const mix = measureMix(rows);
   const counts = {
@@ -128,4 +133,17 @@ if (isMain) {
     `eval cases=${r.total} false_approvals=${r.falseApprovals} correct_approval_rate=${pct(r.correctApprovalRate)} human_rate=${pct(r.humanRate)} injection_flips=${r.injectionFlips} rail_captures=${r.railCaptures} ledger_chain=${r.chainOk ? "ok" : "BROKEN"}`,
   );
   if (r.falseApprovals > 0 || r.injectionFlips > 0 || !r.chainOk) process.exitCode = 1;
+  if (process.env.SCORER === "transformers") {
+    const { fixCondition } = await import("../src/verify/condition.js");
+    const { languageDetail } = await import("../src/verify/language.js");
+    const cond = fixCondition(COMPANY_RECORDS);
+    const started = Date.now();
+    await languageDetail(cond)({
+      conditionDescription: COMPANY_RECORDS.description,
+      data: {
+        records: [{ name: "Kizuna Logistics", country: "JP", employees: 120, founded: 1998, source_url: "https://registry.example.org/c/1" }],
+      },
+    });
+    console.log(`one_score_ms=${Date.now() - started} model=warm names=1 device=cpu`);
+  }
 }
