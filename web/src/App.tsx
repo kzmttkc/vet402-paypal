@@ -6,7 +6,6 @@ import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
-import { subscribePageScore } from "./local-score";
 import { api } from "./transport";
 
 type Autonomy = "careful" | "balanced" | "autopilot";
@@ -446,7 +445,16 @@ export function App({ simulated = false }: { simulated?: boolean }) {
 
   useEffect(() => {
     if (!simulated) return;
-    return subscribePageScore(setScorePhase);
+    let stop = () => {};
+    let cancel = false;
+    void import("./local-score").then(({ subscribePageScore }) => {
+      if (cancel) return;
+      stop = subscribePageScore(setScorePhase);
+    });
+    return () => {
+      cancel = true;
+      stop();
+    };
   }, [simulated]);
 
   function speakRequest() {
