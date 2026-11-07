@@ -3,7 +3,7 @@ import type { ScamKind, ScamResult, ScamWin } from "../../src/demo/scam.js";
 import type { TruthResult } from "../../src/pay/truth.js";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
+import { SIMULATED_BANNER, copyFor, langFromSearch, modelLoadingLine, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
 import { pageScoreSource } from "./page-score";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
@@ -445,6 +445,27 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   }, [copy]);
 
   useEffect(() => {
+    if (simulated) return;
+    let timer = 0;
+    let stop = false;
+    const tick = async () => {
+      try {
+        const next = await api<Health>("/api/health");
+        if (stop) return;
+        setHealth(next);
+        if (next.model?.phase === "download") timer = window.setTimeout(() => void tick(), 400);
+      } catch {
+        /* refresh() reports a server that is not answering */
+      }
+    };
+    void tick();
+    return () => {
+      stop = true;
+      window.clearTimeout(timer);
+    };
+  }, [simulated]);
+
+  useEffect(() => {
     if (!simulated) return;
     let stop = () => {};
     let cancel = false;
@@ -560,6 +581,11 @@ export function App({ simulated = false }: { simulated?: boolean }) {
       {simulated && scorePhase && (
         <p className="score-note" data-testid="score-model">
           {scoreModelLine(lang, scorePhase)}
+        </p>
+      )}
+      {!simulated && health?.model?.phase === "download" && (
+        <p className="score-note" data-testid="model-loading">
+          {modelLoadingLine(lang, health.model.ratio)}
         </p>
       )}
       <main className="wrap" data-lang={lang}>

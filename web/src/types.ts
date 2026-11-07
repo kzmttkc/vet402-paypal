@@ -62,4 +62,5 @@ export interface Health {
   ok: boolean;
   rail: "mock" | "sandbox";
   stopped: boolean;
+  model?: { phase: "download" | "ready" | "failed"; ratio: number };
 }

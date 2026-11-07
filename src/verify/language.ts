@@ -130,18 +130,55 @@ export function useLanguageAsk(ask: LanguageAsk | null): void {
   askOverride = ask;
 }
 
+/** The asker installed by tests. Null means the server should use Qwen3, or the embedding floor until it is ready. */
+export function installedLanguageAsk(): LanguageAsk | null {
+  return askOverride;
+}
+
 export function activeLanguageAsk(): LanguageAsk {
   return askOverride ?? transformersAsk;
 }
 
-/** Lazy Qwen3 asker. Weights land in `.cache/transformers`. No hub token is sent. */
+type LoadProgress = { status?: string; file?: string; loaded?: number; total?: number };
+
+function watchProgress(onProgress?: (ratio: number) => void): (info: LoadProgress) => void {
+  const files = new Map<string, { loaded: number; total: number }>();
+  return (info) => {
+    if (!onProgress || info.status !== "progress" || !info.file || !info.total) return;
+    files.set(info.file, { loaded: info.loaded ?? 0, total: info.total });
+    let loaded = 0;
+    let total = 0;
+    for (const file of files.values()) {
+      loaded += file.loaded;
+      total += file.total;
+    }
+    if (total > 0) onProgress(Math.max(0, Math.min(1, loaded / total)));
+  };
+}
+
+/**
+ * Starts the Qwen3 download once. A failed attempt is forgotten, so the same process can try again.
+ * Weights land in `.cache/transformers`. No hub token is sent.
+ */
+export function startLanguageModel(onProgress?: (ratio: number) => void): Promise<(prompt: string) => Promise<string>> {
+  if (!pipelinePromise) {
+    let loading: Promise<(prompt: string) => Promise<string>>;
+    loading = loadAsker(onProgress).catch((err) => {
+      if (pipelinePromise === loading) pipelinePromise = null;
+      throw err;
+    });
+    pipelinePromise = loading;
+  }
+  return pipelinePromise;
+}
+
+/** Lazy Qwen3 asker. */
 export async function transformersAsk(prompt: string): Promise<string> {
-  if (!pipelinePromise) pipelinePromise = loadAsker();
-  const ask = await pipelinePromise;
+  const ask = await startLanguageModel();
   return ask(prompt);
 }
 
-async function loadAsker(): Promise<(prompt: string) => Promise<string>> {
+async function loadAsker(onProgress?: (ratio: number) => void): Promise<(prompt: string) => Promise<string>> {
   delete process.env.HF_TOKEN;
   delete process.env.HF_ACCESS_TOKEN;
   delete process.env.HUGGING_FACE_HUB_TOKEN;
@@ -156,6 +193,7 @@ async function loadAsker(): Promise<(prompt: string) => Promise<string>> {
   const generator = await mod.pipeline("text-generation", LANGUAGE_MODEL_ID, {
     dtype: LANGUAGE_DTYPE,
     device: "cpu",
+    progress_callback: watchProgress(onProgress),
   });
   return async (prompt: string) => {
     const output = await generator([{ role: "user", content: prompt }], {

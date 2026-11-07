@@ -4,6 +4,7 @@ import type { PayPalRail } from "../rail/types.js";
 import type { Autonomy } from "../policy/mandate.js";
 import { rememberScamWin } from "../demo/scam-file.js";
 import { isScamKind } from "../demo/scam.js";
+import { modelPhase } from "../verify/warmup.js";
 import { Desk, DeskError, type JobView } from "./desk.js";
 import type { DeliveryMode } from "./deliveries.js";
 
@@ -63,7 +64,7 @@ export function createApp(opts: AppOptions = {}): Hono {
     return c.json({ error: "something went wrong" }, 500);
   });
 
-  app.get("/api/health", (c) => c.json({ ok: true, rail: desk.railName, stopped: desk.isStopped }));
+  app.get("/api/health", (c) => c.json({ ok: true, rail: desk.railName, stopped: desk.isStopped, model: modelPhase() }));
 
   app.post("/api/jobs", async (c) => {
     const parsed = parsePlan(await readJson(c));

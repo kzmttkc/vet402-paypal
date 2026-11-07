@@ -8,6 +8,7 @@ import type { PayPalRail } from "../rail/types.js";
 import { aggregateSellers, approvalSentence, loadFrozenExport, pickSeller, type SellerStats } from "../sellers/index.js";
 import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
 import { defaultScorerFor, type Outcome, type Scorer } from "../verify/judge.js";
+import { warmingScorer } from "../verify/warmup.js";
 import { isScamKind, judgeScam, scamScorer, type ScamResult, type ScamWin } from "../demo/scam.js";
 import { deliveryFor, type DeliveryMode } from "./deliveries.js";
 import { recordPrices, settlePayPerTruth, TRUTH_COUNT, TRUTH_HOLD_CENTS, TRUTH_PASSED, type TruthResult } from "../pay/truth.js";
@@ -188,12 +189,12 @@ export class Desk {
     this.rail = opts.rail;
     this.railName = opts.rail.name === "paypal-sandbox" ? "sandbox" : "mock";
     this.now = opts.now ?? (() => Date.now());
-    this.scorer = opts.scorer;
     this.onScamWin = opts.onScamWin;
     const sellers = opts.sellers ?? aggregateSellers(loadFrozenExport().rows);
     this.sellers = sellers;
     this.seller = pickSeller(sellers);
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
+    this.scorer = opts.scorer ?? warmingScorer(this.conditions.get(this.conditionId));
     this.samples = [
       { jobId: "sample-late", itemId: "batch-1", holdCents: 2_500, reason: "late", decision: "open" },
       { jobId: "sample-score", itemId: "batch-2", holdCents: 2_500, reason: "score_uncertain", decision: "open" },

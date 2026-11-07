@@ -308,6 +308,13 @@ export function copyFor(lang: Lang): Copy {
   return lang === "ja" ? JA : EN;
 }
 
+/** Shown while the server is still fetching Qwen3. Japanese only when the screen language is Japanese. */
+export function modelLoadingLine(lang: Lang, ratio: number): string {
+  const pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+  if (lang === "ja") return `AIモデルを読み込んでいます: ${pct}%`;
+  return `AI model loading: ${pct}%`;
+}
+
 export function scoreLine(lang: Lang, passAt: number, voidBelow: number): string {
   const pass = passAt.toFixed(2);
   const below = voidBelow.toFixed(2);

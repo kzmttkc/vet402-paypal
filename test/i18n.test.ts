@@ -6,6 +6,7 @@ import {
   presentHoldQuestion,
   presentSellerLine,
   presentSummary,
+  modelLoadingLine,
   scoreLine,
   scoreModelLine,
   screenJob,
@@ -29,6 +30,9 @@ describe("screen language", () => {
     expect(scoreModelLine("ja", { phase: "ready" })).toContain("埋め込み");
     expect(scoreModelLine("ja", { phase: "download", ratio: 0.4 })).toContain("40%");
     expect(scoreModelLine("en", { phase: "failed" })).toContain("did not load");
+    expect(modelLoadingLine("en", 0.42)).toBe("AI model loading: 42%");
+    expect(modelLoadingLine("ja", 0.42)).toBe("AIモデルを読み込んでいます: 42%");
+    expect(modelLoadingLine("en", 0)).toBe("AI model loading: 0%");
   });
 
   it("keeps the same amount and id text in English and Japanese", () => {
