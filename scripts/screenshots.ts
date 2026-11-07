@@ -1,5 +1,6 @@
 /**
- * Saves the Day 2 screens. Expects `npm run dev` already listening on port 5173.
+ * Saves the live screen. Expects `npm run dev` already listening on port 5173.
+ * Uses Playwright's headless Chromium. It does not launch the Google Chrome app.
  */
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
@@ -24,46 +25,34 @@ async function waitUp(): Promise<void> {
 await waitUp();
 await mkdir(out, { recursive: true });
 
-const browser = await chromium.launch({ channel: "chrome" });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-await page.goto(base, { waitUntil: "domcontentloaded" });
-await page.getByTestId("demo-play").click();
-await page.getByTestId("demo-left-status").waitFor();
-const left = (await page.getByTestId("demo-left-status").innerText()).trim();
-const right = (await page.getByTestId("demo-right-status").innerText()).trim();
-const lost = (await page.getByTestId("demo-right-summary").innerText()).trim();
-if (left !== "CAPTURED" || right !== "VOIDED" || !lost.includes("didn't lose a cent")) {
-  throw new Error(`demo showed ${left} / ${right} / ${lost}`);
-}
-await page.screenshot({ path: `${out}/demo-mobile.png`, animations: "disabled" });
-
-await page.setViewportSize({ width: 1100, height: 900 });
-await page.getByTestId("demo-pair").scrollIntoViewIfNeeded();
-const pair = await page.getByTestId("demo-pair").boundingBox();
-if (!pair) throw new Error("demo pair has no box");
-await page.screenshot({
-  path: `${out}/demo-captured-voided.png`,
-  clip: { x: 0, y: 0, width: 1100, height: Math.min(900, Math.ceil(pair.y + pair.height + 28)) },
-  animations: "disabled",
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {}),
 });
+const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const started = Date.now();
+await page.goto(base, { waitUntil: "domcontentloaded" });
+await page.getByTestId("pay-per-truth-play").click();
+await page.getByTestId("first-captured").waitFor();
+const word = (await page.getByTestId("first-captured").innerText()).trim();
+if (word !== "CAPTURED") throw new Error(`first status was ${word}`);
+console.log(`first CAPTURED ${((Date.now() - started) / 1000).toFixed(2)}s`);
+await page.screenshot({ path: `${out}/pay-per-truth.png`, animations: "disabled" });
 
-await page.getByRole("button", { name: "Show the approval card" }).click();
+await page.getByRole("button", { name: "Show the plan" }).click();
 await page.getByTestId("approval-seller-line").waitFor();
 const seller = (await page.getByTestId("approval-seller-line").innerText()).trim();
-const condition = (await page.getByTestId("approval-condition-id").innerText()).trim();
 if (!/^\d+ paid purchases, \d+\.\d% matched the promised shape, \d+\.\d% errors after payment$/.test(seller)) {
   throw new Error(`seller line: ${seller}`);
 }
-if (!/^cond_[0-9a-f]{64}$/.test(condition)) throw new Error(`condition id: ${condition}`);
-await page.addStyleTag({ content: ".stopbar{display:none !important}" });
-await page.getByRole("button", { name: "Place the hold" }).waitFor();
+await page.getByRole("button", { name: "Continue to approval" }).click();
+await page.getByTestId("mock-approval").waitFor();
 await page.getByTestId("approval-card").screenshot({ path: `${out}/approval-card.png`, animations: "disabled" });
-await page.getByRole("button", { name: "Capture" }).first().waitFor();
-await page.getByTestId("review-grid").scrollIntoViewIfNeeded();
-await page.getByTestId("review-grid").screenshot({ path: `${out}/review-queue.png`, animations: "disabled" });
+
+await page.getByRole("tab", { name: "Scam my agent" }).click();
+await page.getByTestId("scam-bench").screenshot({ path: `${out}/scam-my-agent.png`, animations: "disabled" });
 
 await browser.close();
-console.log(`${out}/demo-mobile.png`);
-console.log(`${out}/demo-captured-voided.png`);
+console.log(`${out}/pay-per-truth.png`);
 console.log(`${out}/approval-card.png`);
-console.log(`${out}/review-queue.png`);
+console.log(`${out}/scam-my-agent.png`);

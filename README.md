@@ -27,6 +27,8 @@ The public demo URL is TBD as of 2026-11-07. Nothing in this repository is a hos
 
 `npm test` needs no key and no network. `npm run dev` serves the API on port 8787 and the screen on port 5173. Leave `PAYPAL_ENV` unset and the screen stays on the mock.
 
+On 2026-11-07, Playwright's headless Chromium opened the static page (`npm run build:static`, then `npm run screens:static`) at 375px wide, clicked **Play**, and read the first `CAPTURED`. The clock started when navigation started. It took **0.58s**. The target is under 10 seconds. That run does not launch the Google Chrome app.
+
 ## May it pay?
 
 All of these must hold, checked in code before PayPal is called:
