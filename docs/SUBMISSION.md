@@ -13,7 +13,7 @@ Paste the sections below into the PayPal AI Hackathon form. Rules checked on 202
 
 ## Inspiration
 
-The frozen vet402 export (fetched 2026-11-07) has 13,893 settled purchases. Thousands of them came back as a 4xx, a 5xx, a shape mismatch, or later than 15 seconds. Capturing at the moment the agent buys would pay for those. I wanted the hold to stay in place until the body passed a condition that was already fixed.
+The frozen vet402 export (fetched 2026-11-07) has 13,893 settled purchases. 1,826 of them (13.1%) came back as a paid 4xx (736), a paid 5xx (121), a shape mismatch (728), or a 2xx later than 15 seconds (241). Capturing at the moment the agent buys would pay for those. I wanted the hold to stay in place until the body passed a condition that was already fixed.
 
 ## What it does
 
@@ -35,7 +35,7 @@ The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a p
 
 ## Challenges
 
-The export has no column for an empty 200, for injected text, for an instruction sitting in a field the condition did ask for, or for a shape-valid delivery whose names are not companies. Those four types are a fixed 12 each in the eval, not a measured share. 7,935 of the 13,893 settled rows fall outside the five measured buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. [EVAL.md](../EVAL.md) spells that out.
+The export has no column for an empty 200, for injected text, for an instruction sitting in a field the condition did ask for, or for a shape-valid delivery whose names are not companies. Those four types are a fixed 12 each in the eval, not a measured share. The mix itself is the share of 5,958 settled rows: 4,132 with `l2_schema=match`, 728 with `l2_schema=mismatch`, 736 paid 4xx, 121 paid 5xx, and 241 paid 2xx later than 15 seconds. The other 7,935 of the 13,893 settled rows fall outside those five buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. The bodies in the eval are generated. [EVAL.md](../EVAL.md) spells that out.
 
 Structural checks decide most failures before the score runs. Twelve shape-valid deliveries about weather and food are in the 248. Qwen3 voided all 12. The embedding floor would have captured them. MiniLM is not the scorer that printed this table.
 
@@ -88,7 +88,7 @@ No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.
 2. `npm test` (no network)
 3. `npm run dev`
 4. Open http://127.0.0.1:5173
-5. **Play the same job both ways.** The left side reads CAPTURED. The right side reads VOIDED.
+5. **Play the same job both ways.** The left side reads CAPTURED. The right side reads VOIDED. If Qwen3 is still downloading, the screen says `AI model loading: n%` and the pair still resolves. When the download finishes, the same process scores with Qwen3. No restart.
 6. **Show the approval card.** The seller line is counted from the frozen export.
 7. **Place the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**.
 8. **Void every open hold.** Open authorizations void.

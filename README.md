@@ -6,7 +6,7 @@ The seller's paid history decides the hold: one authorization for the whole job,
 
 It is for a person who lets an agent buy data and needs the payment to stop when the body is empty, the wrong shape, an HTTP error, or late.
 
-The seller line on the approval card, and the mix of failures in the eval, are counted from 13,893 settled purchases in the public vet402 export frozen on 2026-11-07. The pass/fail rules themselves are a fixed spec, registered before the hold. [EVAL.md](EVAL.md) records which rows were counted and which were left out.
+The seller line on the approval card is counted from 13,893 settled purchases in the public vet402 export frozen on 2026-11-07. The eval's failure mix is the share of 5,958 of those rows: a settled purchase with a paid 4xx or 5xx, a 2xx later than 15 seconds, or a 2xx whose `l2_schema` is `match` or `mismatch` (4,132 + 728 + 736 + 121 + 241). The other 7,935 settled rows are left out of that ratio. The bodies in the eval are generated. The pass/fail rules themselves are a fixed spec, registered before the hold. [EVAL.md](EVAL.md) records the buckets.
 
 ## Two minutes
 
@@ -16,7 +16,7 @@ The public demo URL is TBD as of 2026-11-07. Nothing in this repository is a hos
 |---|---|
 | Public demo | TBD |
 | `npm install && npm run dev`, then open http://127.0.0.1:5173 | the hold screen, in English. The banner says this session is on the mock rail and no money moves. `?lang=ja` switches the screen to Japanese. Amounts and ids stay as they are. |
-| **Play the same job both ways** | left **CAPTURED**, right **VOIDED**, and "$0. Your agent didn't lose a cent." |
+| **Play the same job both ways** | left **CAPTURED**, right **VOIDED**, and "$0. Your agent didn't lose a cent." While Qwen3 is downloading, the screen says `AI model loading: n%`. The pair still resolves, and the same process switches to Qwen3 when the download finishes. |
 | Type a job, pick a budget and Careful / Balanced / Autopilot, then **Show the approval card** | the breakdown, the condition id, the seller line ("n paid purchases, x% matched the promised shape, y% errors after payment"), and "May I place a hold of $X until each delivery checks out?" |
 | **Place the hold**, then **Deliver the records** / **Deliver nothing** / **Deliver late** | PASS → captured, FAIL → voided, or UNSURE → a person, then "Captured $a of $b hold. $c released." |
 | Scroll to **With a person** | sample holds in the grid. **Reset samples** puts them back. |

@@ -10,7 +10,7 @@ Spoken lines only. Clicks happen under the line, not instead of it.
 
 **0:27** Qwen3, after the loading line is gone. Send "Not a company": the shape is valid, and the name is not a company. Qwen3 answers no. The outcome is VOID. Captured stays $0.00. The embedding floor would have captured this one.
 
-**0:42** This is the approval card. The seller is a company-data outlet, not an HTTP header API. The line is a track record: how many purchases settled, what share matched the promised shape, and what share erred after payment. A short record is discounted. The line under the question says whether this seller is held once, or in parts.
+**0:42** This is the approval card. The seller is a company-data outlet, not an HTTP header API. The line is a track record: how many purchases settled, what share matched the promised shape, and what share erred after payment. A short record is discounted. The failure mix in the eval is the share of 5,958 settled rows that had a paid 4xx, a paid 5xx, a late 2xx, or a shape check. It is not a share of all 13,893. The line under the question says whether this seller is held once, or in parts.
 
 **0:57** The condition was fixed before the hold. It asks for company records: a name, an ISO country code, an employee count, a founding year, and a source URL.
 
