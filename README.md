@@ -1,6 +1,8 @@
 # vet402 × PayPal
 
-It places one PayPal authorization on a data job, checks each delivery against a condition fixed before the hold, and captures only the part that passed.
+Pay per truth: one hold on the job, then capture only the records that passed and release the rest.
+Scam my agent: a browser page where a judge sends a fake delivery and sees the outcome, the reason, and $0.00 when it fails.
+The seller's paid history decides the hold: one authorization for the whole job, or five records at a time.
 
 It is for a person who lets an agent buy data and needs the payment to stop when the body is empty, the wrong shape, an HTTP error, or late.
 
