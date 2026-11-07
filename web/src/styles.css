@@ -189,6 +189,13 @@ label.block, legend {
 
 .block { margin-top: 0.9rem; }
 
+.brief-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
 textarea {
   display: block;
   width: 100%;

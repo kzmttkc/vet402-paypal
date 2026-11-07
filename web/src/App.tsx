@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
 
 type Autonomy = "careful" | "balanced" | "autopilot";
@@ -224,6 +225,42 @@ export function App() {
   const [chains, setChains] = useState<{ jobId: string; headHash: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [listening, setListening] = useState(false);
+  const speechRef = useRef<SpeechSession | null>(null);
+  const canSpeak = speechConstructor(window as unknown as SpeechHost) !== null;
+
+  useEffect(() => {
+    return () => speechRef.current?.stop();
+  }, []);
+
+  function speakRequest() {
+    if (listening) {
+      speechRef.current?.stop();
+      speechRef.current = null;
+      setListening(false);
+      return;
+    }
+    const session = startSpeechInput(window as unknown as SpeechHost, {
+      lang: "en-US",
+      onTranscript: (text) => {
+        setBrief((prev) => {
+          const next = prev.trim().length > 0 ? `${prev.trim()} ${text}` : text;
+          return next.slice(0, 280);
+        });
+      },
+      onEnd: () => {
+        speechRef.current = null;
+        setListening(false);
+      },
+    });
+    if (!session) {
+      speechRef.current = null;
+      setListening(false);
+      return;
+    }
+    speechRef.current = session;
+    setListening(true);
+  }
 
   const refresh = useCallback(async () => {
     const [h, review, act] = await Promise.all([
@@ -325,8 +362,15 @@ export function App() {
         >
           <label className="block" htmlFor="brief">
             What should the agent buy?
-            <textarea id="brief" value={brief} maxLength={280} onChange={(e) => setBrief(e.target.value)} />
           </label>
+          {canSpeak && (
+            <span className="brief-tools">
+              <button type="button" className="minor" data-testid="speak" aria-pressed={listening} onClick={speakRequest}>
+                {listening ? "Listening…" : "Speak the request"}
+              </button>
+            </span>
+          )}
+          <textarea id="brief" value={brief} maxLength={280} onChange={(e) => setBrief(e.target.value)} />
           <fieldset>
             <legend>Budget</legend>
             <div className="choices">
