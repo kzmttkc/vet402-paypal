@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, screenJob, type Copy, type Lang } from "../../src/i18n/copy.js";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
 
@@ -12,12 +13,6 @@ const BUDGETS: { cents: Budget; label: string }[] = [
   { cents: 5000, label: "$50" },
   { cents: 10000, label: "$100" },
   { cents: 20000, label: "$200" },
-];
-
-const LEVELS: { id: Autonomy; label: string }[] = [
-  { id: "careful", label: "Careful" },
-  { id: "balanced", label: "Balanced" },
-  { id: "autopilot", label: "Autopilot" },
 ];
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -96,20 +91,20 @@ function Side({
   );
 }
 
-function Slip({ job, onHold, busy }: { job: JobView; onHold: () => void; busy: boolean }) {
+function Slip({ job, copy, onHold, busy }: { job: JobView; copy: Copy; onHold: () => void; busy: boolean }) {
   const shape = Object.entries(job.condition.shape);
   const ranges = Object.entries(job.condition.ranges);
   return (
     <section className="slip" data-testid="approval-card" aria-labelledby="slip-title">
-      <h2 id="slip-title">Approval</h2>
+      <h2 id="slip-title">{copy.approval}</h2>
       <p>{job.brief}</p>
       <p className="tiny">
-        {job.autonomy === "careful" && "Careful: a person approves every hold. The yes below is that approval."}
-        {job.autonomy === "balanced" && "Balanced: holds up to $50.00 can go through on their own. Above that, a person approves. The yes below is yours."}
-        {job.autonomy === "autopilot" && "Autopilot: inside the budget and the caps, the yes below places the hold."}
+        {job.autonomy === "careful" && copy.careful}
+        {job.autonomy === "balanced" && copy.balanced}
+        {job.autonomy === "autopilot" && copy.autopilot}
       </p>
       <table className="split">
-        <caption className="visually-hidden">What the hold pays for</caption>
+        <caption className="visually-hidden">{copy.paysFor}</caption>
         <tbody>
           {job.items.map((item) => (
             <tr key={item.itemId}>
@@ -120,21 +115,21 @@ function Slip({ job, onHold, busy }: { job: JobView; onHold: () => void; busy: b
         </tbody>
         <tfoot>
           <tr>
-            <td>Hold</td>
+            <td>{copy.hold}</td>
             <td>{usd(job.holdCents)}</td>
           </tr>
         </tfoot>
       </table>
       <dl className="meta">
         <div>
-          <dt>Condition</dt>
+          <dt>{copy.condition}</dt>
           <dd>
             <code data-testid="approval-condition-id">{job.conditionId}</code>
           </dd>
           <dd>{job.condition.description}</dd>
         </div>
         <div>
-          <dt>Shape</dt>
+          <dt>{copy.shape}</dt>
           <dd>
             {shape.map(([path, type]) => (
               <span key={path}>
@@ -145,7 +140,7 @@ function Slip({ job, onHold, busy }: { job: JobView; onHold: () => void; busy: b
           </dd>
         </div>
         <div>
-          <dt>Ranges</dt>
+          <dt>{copy.ranges}</dt>
           <dd>
             {ranges.map(([path, range]) => (
               <span key={path}>
@@ -156,13 +151,11 @@ function Slip({ job, onHold, busy }: { job: JobView; onHold: () => void; busy: b
           </dd>
         </div>
         <div>
-          <dt>Score</dt>
-          <dd>
-            Pass at {job.condition.score.passAt.toFixed(2)} or above. Void below {job.condition.score.voidBelow.toFixed(2)}. Between those, a person decides.
-          </dd>
+          <dt>{copy.score}</dt>
+          <dd>{scoreLine(copy.lang, job.condition.score.passAt, job.condition.score.voidBelow)}</dd>
         </div>
         <div>
-          <dt>This seller</dt>
+          <dt>{copy.seller}</dt>
           <dd className="tiny">{job.sellerId}</dd>
           <dd className="seller-line" data-testid="approval-seller-line">
             {job.sellerLine}
@@ -174,7 +167,7 @@ function Slip({ job, onHold, busy }: { job: JobView; onHold: () => void; busy: b
       </p>
       {job.status === "planned" && (
         <button type="button" className="yes" onClick={onHold} disabled={busy}>
-          Place the hold
+          {copy.placeHold}
         </button>
       )}
       {job.status !== "planned" && (
@@ -188,34 +181,37 @@ function Slip({ job, onHold, busy }: { job: JobView; onHold: () => void; busy: b
               </li>
             ))}
           </ul>
-          {job.orderId && <p className="tiny">Order {job.orderId}</p>}
-          {job.authorizationId && <p className="tiny">Authorization {job.authorizationId}</p>}
-          {job.captureId && <p className="tiny">Capture {job.captureId}</p>}
+          {job.orderId && <p className="tiny">{copy.order} {job.orderId}</p>}
+          {job.authorizationId && <p className="tiny">{copy.authorization} {job.authorizationId}</p>}
+          {job.captureId && <p className="tiny">{copy.captureId} {job.captureId}</p>}
         </>
       )}
     </section>
   );
 }
 
-function ActionCell(props: ICellRendererParams<ReviewRow, unknown, { onDecide: (row: ReviewRow, decision: "capture" | "void") => void }>) {
+function ActionCell(props: ICellRendererParams<ReviewRow, unknown, { onDecide: (row: ReviewRow, decision: "capture" | "void") => void; copy: Copy }>) {
   const row = props.data;
+  const copy = props.context.copy;
   if (!row) return null;
-  if (row.decision !== "open") return <span>{row.decision}</span>;
+  if (row.decision !== "open") return <span>{presentDecision(copy.lang, row.decision)}</span>;
   return (
     <div className="cell-actions">
       <button type="button" onClick={() => props.context.onDecide(row, "capture")}>
-        Capture
+        {copy.capture}
       </button>
       <button type="button" onClick={() => props.context.onDecide(row, "void")}>
-        Void
+        {copy.void}
       </button>
     </div>
   );
 }
 
 export function App() {
+  const [lang] = useState<Lang>(() => langFromSearch(window.location.search));
+  const copy = copyFor(lang);
   const [health, setHealth] = useState<Health | null>(null);
-  const [brief, setBrief] = useState("Collect company records");
+  const [brief, setBrief] = useState(copy.sampleBrief);
   const [budget, setBudget] = useState<Budget>(5000);
   const [autonomy, setAutonomy] = useState<Autonomy>("careful");
   const [job, setJob] = useState<JobView | null>(null);
@@ -230,8 +226,10 @@ export function App() {
   const canSpeak = speechConstructor(window as unknown as SpeechHost) !== null;
 
   useEffect(() => {
+    document.documentElement.lang = copy.htmlLang;
+    document.title = copy.documentTitle;
     return () => speechRef.current?.stop();
-  }, []);
+  }, [copy]);
 
   function speakRequest() {
     if (listening) {
@@ -241,7 +239,7 @@ export function App() {
       return;
     }
     const session = startSpeechInput(window as unknown as SpeechHost, {
-      lang: "en-US",
+      lang: copy.speechLang,
       onTranscript: (text) => {
         setBrief((prev) => {
           const next = prev.trim().length > 0 ? `${prev.trim()} ${text}` : text;
@@ -275,7 +273,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    refresh().catch((e: unknown) => setError(e instanceof Error ? e.message : "The server is not answering."));
+    refresh().catch((e: unknown) => setError(e instanceof Error ? e.message : copy.serverDown));
   }, [refresh]);
 
   async function run(task: () => Promise<void>) {
@@ -285,7 +283,7 @@ export function App() {
       await task();
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The request failed.");
+      setError(e instanceof Error ? e.message : copy.requestFailed);
     } finally {
       setBusy(false);
     }
@@ -300,34 +298,39 @@ export function App() {
 
   const columns = useMemo<ColDef<ReviewRow>[]>(
     () => [
-      { headerName: "Decision", width: 168, cellRenderer: ActionCell, sortable: false, pinned: "left" },
-      { field: "reason", headerName: "Reason", width: 150 },
-      { field: "hold", headerName: "Hold", width: 100 },
-      { field: "itemId", headerName: "Item", width: 110 },
-      { field: "kind", headerName: "Kind", width: 100 },
-      { field: "jobId", headerName: "Job", minWidth: 160 },
-      { field: "sellerId", headerName: "Seller", minWidth: 180 },
-      { field: "conditionId", headerName: "Condition", minWidth: 220 },
+      { headerName: copy.colDecision, width: 168, cellRenderer: ActionCell, sortable: false, pinned: "left" },
+      {
+        field: "reason",
+        headerName: copy.colReason,
+        width: 150,
+        valueFormatter: (p) => presentReason(copy.lang, String(p.value ?? "")),
+      },
+      { field: "hold", headerName: copy.colHold, width: 100 },
+      { field: "itemId", headerName: copy.colItem, width: 110 },
+      {
+        field: "kind",
+        headerName: copy.colKind,
+        width: 100,
+        valueFormatter: (p) => presentKind(copy.lang, String(p.value ?? "")),
+      },
+      { field: "jobId", headerName: copy.colJob, minWidth: 160 },
+      { field: "sellerId", headerName: copy.colSeller, minWidth: 180 },
+      { field: "conditionId", headerName: copy.colCondition, minWidth: 220 },
     ],
-    [],
+    [copy],
   );
 
-  const railLine =
-    health?.rail === "sandbox"
-      ? "This session talks to the PayPal sandbox."
-      : "This session is on the mock rail. No money moves.";
+  const railLine = health?.rail === "sandbox" ? copy.railSandbox : copy.railMock;
 
   return (
     <>
-      <main className="wrap">
-        <h1>Place a hold. Pay only for what arrived.</h1>
-        <p className="lead">
-          The agent buys company records. PayPal holds the budget. Each delivery is checked against a condition fixed before the hold. Capture keeps what passed. The rest is released.
-        </p>
-        <p className="rail-note">{health ? railLine : "Connecting…"}</p>
+      <main className="wrap" data-lang={lang}>
+        <h1 data-testid="page-heading">{copy.title}</h1>
+        <p className="lead">{copy.lead}</p>
+        <p className="rail-note">{health ? railLine : copy.connecting}</p>
 
-        <h2>Same job, two deliveries</h2>
-        <p>One click. The left side delivers the records. The right side delivers nothing.</p>
+        <h2>{copy.demoHeading}</h2>
+        <p>{copy.demoLead}</p>
         <button
           type="button"
           className="play"
@@ -341,16 +344,16 @@ export function App() {
           }
         >
           <PlayIcon />
-          Play the same job both ways
+          {copy.play}
         </button>
         {demo && (
           <div className="pair" data-testid="demo-pair">
-            <Side who="Honest delivery" job={demo.left} statusId="demo-left-status" summaryId="demo-left-summary" />
-            <Side who="Empty delivery" job={demo.right} statusId="demo-right-status" summaryId="demo-right-summary" />
+            <Side who={copy.honest} job={screenJob(demo.left, lang)} statusId="demo-left-status" summaryId="demo-left-summary" />
+            <Side who={copy.empty} job={screenJob(demo.right, lang)} statusId="demo-right-status" summaryId="demo-right-summary" />
           </div>
         )}
 
-        <h2>Ask for the job</h2>
+        <h2>{copy.askHeading}</h2>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -361,18 +364,18 @@ export function App() {
           }}
         >
           <label className="block" htmlFor="brief">
-            What should the agent buy?
+            {copy.briefLabel}
           </label>
           {canSpeak && (
             <span className="brief-tools">
               <button type="button" className="minor" data-testid="speak" aria-pressed={listening} onClick={speakRequest}>
-                {listening ? "Listening…" : "Speak the request"}
+                {listening ? copy.listening : copy.speak}
               </button>
             </span>
           )}
           <textarea id="brief" value={brief} maxLength={280} onChange={(e) => setBrief(e.target.value)} />
           <fieldset>
-            <legend>Budget</legend>
+            <legend>{copy.budget}</legend>
             <div className="choices">
               {BUDGETS.map((b) => (
                 <label key={b.cents}>
@@ -383,9 +386,9 @@ export function App() {
             </div>
           </fieldset>
           <fieldset>
-            <legend>Autonomy</legend>
+            <legend>{copy.autonomy}</legend>
             <div className="choices">
-              {LEVELS.map((level) => (
+              {copy.levels.map((level) => (
                 <label key={level.id}>
                   <input type="radio" name="autonomy" value={level.id} checked={autonomy === level.id} onChange={() => setAutonomy(level.id)} />
                   <span>{level.label}</span>
@@ -394,14 +397,15 @@ export function App() {
             </div>
           </fieldset>
           <button type="submit" className="go" disabled={busy || brief.trim().length === 0}>
-            Show the approval card
+            {copy.showCard}
           </button>
         </form>
 
         {job && (
           <>
             <Slip
-              job={job}
+              job={screenJob(job, lang)}
+              copy={copy}
               busy={busy}
               onHold={() =>
                 void run(async () => {
@@ -414,9 +418,9 @@ export function App() {
               <div className="modes">
                 {(
                   [
-                    ["honest", "Deliver the records"],
-                    ["empty", "Deliver nothing"],
-                    ["unsure", "Deliver late"],
+                    ["honest", copy.deliverHonest],
+                    ["empty", copy.deliverEmpty],
+                    ["unsure", copy.deliverLate],
                   ] as const
                 ).map(([mode, label]) => (
                   <button
@@ -441,26 +445,26 @@ export function App() {
 
         {error && (
           <p className="alert" role="alert">
-            {error}
+            {presentError(lang, error)}
           </p>
         )}
 
         <div className="section-head">
-          <h2>With a person</h2>
+          <h2>{copy.reviewHeading}</h2>
           <button type="button" className="minor" disabled={busy} onClick={() => void run(async () => {
             const review = await api<{ rows: ReviewRow[] }>("/api/review/reset", {});
             setRows(review.rows);
           })}>
-            Reset samples
+            {copy.reset}
           </button>
         </div>
-        <p>Sample holds are already listed. A late delivery from a real hold joins them. Reset puts the samples back.</p>
+        <p>{copy.reviewLead}</p>
         <div className="review-scroll" data-testid="review-grid">
           <div className="ag-theme-quartz review-grid">
             <AgGridReact<ReviewRow>
               rowData={rows}
               columnDefs={columns}
-              context={{ onDecide }}
+              context={{ onDecide, copy }}
               domLayout="autoHeight"
               getRowId={(p) => `${p.data.jobId}:${p.data.itemId}`}
               headerHeight={36}
@@ -471,22 +475,22 @@ export function App() {
           </div>
         </div>
 
-        <h2>Activity</h2>
-        <p>Every PayPal id from this process, the verdict, and the hash of the ledger line.</p>
+        <h2>{copy.activityHeading}</h2>
+        <p>{copy.activityLead}</p>
         {activity.length === 0 ? (
-          <p className="tiny">No PayPal calls yet. A hold writes the first order id here.</p>
+          <p className="tiny">{copy.activityEmpty}</p>
         ) : (
           <div className="activity-scroll" data-testid="activity">
             <table className="activity">
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Order</th>
-                  <th>Authorization</th>
-                  <th>Capture</th>
-                  <th>Refund</th>
-                  <th>Verdict</th>
-                  <th>Ledger hash</th>
+                  <th>{copy.colType}</th>
+                  <th>{copy.colOrder}</th>
+                  <th>{copy.colAuthorization}</th>
+                  <th>{copy.colCapture}</th>
+                  <th>{copy.colRefund}</th>
+                  <th>{copy.colVerdict}</th>
+                  <th>{copy.colHash}</th>
                 </tr>
               </thead>
               <tbody>
@@ -509,15 +513,13 @@ export function App() {
           <ul className="progress">
             {chains.map((chain) => (
               <li key={chain.jobId}>
-                Ledger head {chain.jobId}: <span className="id">{chain.headHash}</span>
+                {copy.ledgerHead} {chain.jobId}: <span className="id">{chain.headHash}</span>
               </li>
             ))}
           </ul>
         )}
 
-        <p className="escrow">
-          This is not escrow. The hold stays with PayPal. This page only decides whether to capture, void, or ask a person.
-        </p>
+        <p className="escrow">{copy.escrow}</p>
       </main>
       <div className="stopbar">
         <button
@@ -534,7 +536,7 @@ export function App() {
           }
         >
           <StopIcon />
-          {health?.stopped ? "Stopped" : "Void every open hold"}
+          {health?.stopped ? copy.stopped : copy.stop}
         </button>
       </div>
     </>
