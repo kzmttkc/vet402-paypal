@@ -8,6 +8,24 @@ import { completenessScorer, type Scorer } from "../verify/judge.js";
  * The company-data seller the live screen picks from the frozen export
  * (counted 2026-11-07). The static page does not read the CSV.
  */
+/**
+ * Non-header seller with the most settled purchases who passes creditPlan
+ * (settled 6, shape match 1, errors after payment 0). Counted from
+ * data/observatory_export.csv on 2026-11-07. The static page does not read the CSV.
+ */
+export const DEMO_ESTABLISHED: SellerStats = {
+  resourceKey: "router.mudko.com/api/x402/route",
+  attempts: 6,
+  settled: 6,
+  paid2xx: 6,
+  paid4xx: 0,
+  paid5xx: 0,
+  shapeMatch: 6,
+  shapeMismatch: 0,
+  shapeMatchRate: 1,
+  postPayErrorRate: 0,
+};
+
 export const DEMO_SELLER: SellerStats = {
   resourceKey: "agent402.tools/api/skill/company-dossier",
   attempts: 3,
@@ -40,6 +58,7 @@ export const DEMO_NEW_SELLER: SellerStats = {
 
 export function demoSellers(): Map<string, SellerStats> {
   return new Map([
+    [DEMO_ESTABLISHED.resourceKey, DEMO_ESTABLISHED],
     [DEMO_SELLER.resourceKey, DEMO_SELLER],
     [DEMO_NEW_SELLER.resourceKey, DEMO_NEW_SELLER],
   ]);

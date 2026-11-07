@@ -21,6 +21,18 @@ export interface FundedParts {
  * Enough paid history, a high shape-match rate, and few errors after payment:
  * one hold for the whole job. Anyone else is held a few records at a time.
  */
+/**
+ * A real seller the established choice may name.
+ * The label still comes from {@link creditPlan} on the job. A header outlet is skipped when any other seller qualifies.
+ */
+export function pickEstablishedSeller(sellers: ReadonlyMap<string, SellerStats>): SellerStats | null {
+  const qualified = [...sellers.values()].filter((seller) => creditPlan(seller, 1).reason.startsWith("Established"));
+  const pool = qualified.filter((seller) => !/header/i.test(seller.resourceKey));
+  const list = pool.length > 0 ? pool : qualified;
+  list.sort((a, b) => b.settled - a.settled || a.resourceKey.localeCompare(b.resourceKey));
+  return list[0] ?? null;
+}
+
 export function creditPlan(seller: SellerStats, itemCount: number): CreditPlan {
   if (!Number.isInteger(itemCount) || itemCount < 1) throw new TypeError("itemCount must be a positive integer");
   const established =

@@ -12,7 +12,7 @@ import { warmingScorer } from "../verify/warmup.js";
 import { isScamKind, judgeScam, scamScorer, type ScamResult, type ScamWin } from "../demo/scam.js";
 import { deliveryFor, type DeliveryMode } from "./deliveries.js";
 import { recordPrices, settlePayPerTruth, TRUTH_COUNT, TRUTH_HOLD_CENTS, TRUTH_PASSED, type TruthResult } from "../pay/truth.js";
-import { creditPlan, slicesOf, type CreditPlan } from "../sellers/credit.js";
+import { creditPlan, pickEstablishedSeller, slicesOf, type CreditPlan } from "../sellers/credit.js";
 
 const DAY = 86_400_000;
 const BALANCED_AUTO_MAX = 5_000;
@@ -74,6 +74,7 @@ export interface ReviewRow {
   conditionId: string;
   kind: "sample" | "live";
   decision: "open" | "capture" | "void";
+  waitingMs: number;
 }
 
 export interface ActivityEntry {
@@ -95,6 +96,7 @@ interface Sample {
   holdCents: number;
   reason: string;
   decision: "open" | "capture" | "void";
+  openedAt: number;
 }
 
 interface Line {
@@ -209,10 +211,11 @@ export class Desk {
     this.sellerSample = standing.sample;
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
     this.scorer = opts.scorer ?? warmingScorer(this.conditions.get(this.conditionId));
+    const openedAt = this.now();
     this.samples = [
-      { jobId: "sample-late", itemId: "batch-1", holdCents: 2_500, reason: "late", decision: "open" },
-      { jobId: "sample-score", itemId: "batch-2", holdCents: 2_500, reason: "score_uncertain", decision: "open" },
-      { jobId: "sample-scorer", itemId: "batch-1", holdCents: 4_000, reason: "scorer_invalid", decision: "open" },
+      { jobId: "sample-late", itemId: "batch-1", holdCents: 2_500, reason: "late", decision: "open", openedAt },
+      { jobId: "sample-score", itemId: "batch-2", holdCents: 2_500, reason: "score_uncertain", decision: "open", openedAt },
+      { jobId: "sample-scorer", itemId: "batch-1", holdCents: 4_000, reason: "scorer_invalid", decision: "open", openedAt },
     ];
   }
 
@@ -222,17 +225,16 @@ export class Desk {
 
   plan(input: { brief: string; budgetCents: number; autonomy: Autonomy; seller?: "established" | "new" }): JobView {
     const choice = pickSellerFor(this.sellers, jobKindFromBrief(input.brief));
-    const seller = input.seller === "new" ? this.newSeller() : choice.seller;
-    const sellerSample = input.seller === "new" ? false : choice.sample;
+    const established = input.seller === "established" ? pickEstablishedSeller(this.sellers) : null;
+    const seller = input.seller === "new" ? this.newSeller() : (established ?? choice.seller);
+    const sellerSample = input.seller === "new" || established ? false : choice.sample;
     const dollarCount = input.budgetCents % 100 === 0 ? input.budgetCents / 100 : 0;
     const records = input.seller === "new"
       ? pricedRecords(input.budgetCents, 25)
       : input.seller === "established" && dollarCount >= 1
         ? pricedRecords(input.budgetCents, dollarCount)
         : splitBudget(input.budgetCents);
-    const credit = input.seller === "established"
-      ? { partSize: records.length, parts: 1, reason: "Established seller: one hold for the whole job" }
-      : creditPlan(seller, records.length);
+    const credit = creditPlan(seller, records.length);
     const items = credit.parts === 1 ? records : partLines(records, credit.partSize);
     const job = this.finishPlan({
       jobId: `job_${randomUUID()}`,
@@ -244,7 +246,6 @@ export class Desk {
       seller,
       sellerSample,
     });
-    job.credit = credit;
     this.jobs.set(job.jobId, job);
     return this.view(job);
   }
@@ -430,6 +431,7 @@ export class Desk {
       conditionId: this.conditionId,
       kind: "sample",
       decision: s.decision,
+      waitingMs: Math.max(0, this.now() - s.openedAt),
     }));
     return { rows: [...samples, ...this.liveRows()] };
   }
@@ -446,6 +448,15 @@ export class Desk {
     if (outcome !== "human") throw new DeskError(404, "no such review row");
     await job.engine.resolveHuman(jobId, itemId, decision, "buyer");
     return this.review().rows;
+  }
+
+  /** Capture or void every still-open row of one hold, through {@link decide}. */
+  async decideHold(jobId: string, decision: "capture" | "void"): Promise<ReviewRow[]> {
+    const open = this.review().rows.filter((row) => row.jobId === jobId && row.decision === "open");
+    if (open.length === 0) throw new DeskError(404, "no such review row");
+    let rows = this.review().rows;
+    for (const row of open) rows = await this.decide(row.jobId, row.itemId, decision);
+    return rows;
   }
 
   resetSamples(): ReviewRow[] {
@@ -488,6 +499,8 @@ export class Desk {
       const snap = job.engine?.job(job.jobId);
       if (!snap || snap.status !== "needs_human") continue;
       const reason = this.reasonFor(job);
+      const opened = job.engine?.ledger.ofJob(job.jobId)[0]?.ts ?? this.now();
+      const waitingMs = Math.max(0, this.now() - opened);
       for (const item of job.items) {
         const outcome = snap.outcomes[item.itemId];
         if (outcome !== "human" && outcome !== "capture" && outcome !== "void") continue;
@@ -495,13 +508,14 @@ export class Desk {
         rows.push({
           jobId: job.jobId,
           itemId: item.itemId,
-          sellerId: this.seller.resourceKey,
+          sellerId: job.seller.resourceKey,
           holdCents: item.priceCents,
           hold: formatUsd(item.priceCents),
           reason: reason[item.itemId] ?? "unsure",
           conditionId: this.conditionId,
           kind: "live",
           decision: outcome === "human" ? "open" : outcome,
+          waitingMs,
         });
       }
     }

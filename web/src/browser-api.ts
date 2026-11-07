@@ -93,6 +93,15 @@ async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknow
 
   if (path === "/api/review/reset" && body !== undefined) return { rows: desk.resetSamples() };
 
+  const hold = /^\/api\/review\/([^/]+)$/.exec(path);
+  if (hold && body !== undefined) {
+    if (!isRecord(body) || (body.decision !== "capture" && body.decision !== "void")) {
+      return fail("decision must be capture or void");
+    }
+    const rows = await desk.decideHold(decodeURIComponent(hold[1] ?? ""), body.decision);
+    return { rows };
+  }
+
   const review = /^\/api\/review\/([^/]+)\/([^/]+)$/.exec(path);
   if (review && body !== undefined) {
     if (!isRecord(body) || (body.decision !== "capture" && body.decision !== "void")) {

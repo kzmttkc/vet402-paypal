@@ -40,11 +40,13 @@ export type ReviewRow = {
   jobId: string;
   itemId: string;
   sellerId: string;
+  holdCents: number;
   hold: string;
   reason: string;
   conditionId: string;
   kind: "sample" | "live";
   decision: "open" | "capture" | "void";
+  waitingMs: number;
 };
 
 export type ActivityEntry = {

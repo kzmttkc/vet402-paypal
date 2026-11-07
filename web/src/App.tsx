@@ -7,6 +7,7 @@ import {
   activitySentence,
   copyFor,
   deliverySentence,
+  holdsWaitingLine,
   langFromSearch,
   embeddingFloorLine,
   modelLoadingLine,
@@ -25,6 +26,7 @@ import {
 import { pageScoreSource } from "./page-score";
 import { ApprovalSheet, type PaypalButtonConfig } from "./paypal-approval";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
+import { holdViews, waitingLabel, type HoldView } from "../../src/review/holds.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
 import { Evidence } from "./stage/evidence";
 import { Hero } from "./stage/hero";
@@ -159,18 +161,18 @@ function TruthTape({
   );
 }
 
-function ActionCell(props: ICellRendererParams<ReviewRow, unknown, { onDecide: (row: ReviewRow, decision: "capture" | "void") => void; copy: Copy }>) {
+function HoldActionCell(props: ICellRendererParams<HoldView, unknown, { onDecideHold: (jobId: string, decision: "capture" | "void") => void; copy: Copy }>) {
   const row = props.data;
   const copy = props.context.copy;
   if (!row) return null;
   if (row.decision !== "open") return <span>{presentDecision(copy.lang, row.decision)}</span>;
   return (
     <div className="cell-actions">
-      <button type="button" onClick={() => props.context.onDecide(row, "capture")}>
-        {copy.capture}
+      <button type="button" onClick={() => props.context.onDecideHold(row.jobId, "capture")}>
+        {copy.captureAll}
       </button>
-      <button type="button" onClick={() => props.context.onDecide(row, "void")}>
-        {copy.void}
+      <button type="button" onClick={() => props.context.onDecideHold(row.jobId, "void")}>
+        {copy.voidAll}
       </button>
     </div>
   );
@@ -436,24 +438,28 @@ export function App({ simulated = false }: { simulated?: boolean }) {
     }
   }
 
-  const onDecide = useCallback((row: ReviewRow, decision: "capture" | "void") => {
+  const holds = useMemo(() => holdViews(rows), [rows]);
+  const openHolds = holds.filter((hold) => hold.decision === "open").length;
+
+  const onDecideHold = useCallback((jobId: string, decision: "capture" | "void") => {
     void run(async () => {
-      const review = await api<{ rows: ReviewRow[] }>(`/api/review/${encodeURIComponent(row.jobId)}/${encodeURIComponent(row.itemId)}`, { decision });
+      const review = await api<{ rows: ReviewRow[] }>(`/api/review/${encodeURIComponent(jobId)}`, { decision });
       setRows(review.rows);
     });
   }, []);
 
-  const columns = useMemo<ColDef<ReviewRow>[]>(
+  const columns = useMemo<ColDef<HoldView>[]>(
     () => [
-      { headerName: copy.colDecision, width: 168, cellRenderer: ActionCell, sortable: false, pinned: "left" },
+      { headerName: copy.colDecision, width: 228, cellRenderer: HoldActionCell, sortable: false, filter: false, pinned: "left" },
       {
         field: "reason",
         headerName: copy.colReason,
         width: 150,
         valueFormatter: (p) => presentReason(copy.lang, String(p.value ?? "")),
       },
-      { field: "hold", headerName: copy.colHold, width: 100 },
-      { field: "itemId", headerName: copy.colItem, width: 110 },
+      { field: "count", headerName: copy.colCount, width: 110 },
+      { headerName: copy.colWaiting, width: 120, valueGetter: (p) => waitingLabel(p.data?.waitingMs ?? 0) },
+      { field: "hold", headerName: copy.colHold, width: 110 },
       {
         field: "kind",
         headerName: copy.colKind,
@@ -462,7 +468,6 @@ export function App({ simulated = false }: { simulated?: boolean }) {
       },
       { field: "jobId", headerName: copy.colJob, minWidth: 160 },
       { field: "sellerId", headerName: copy.colSeller, minWidth: 180 },
-      { field: "conditionId", headerName: copy.colCondition, minWidth: 220 },
     ],
     [copy],
   );
@@ -799,19 +804,21 @@ export function App({ simulated = false }: { simulated?: boolean }) {
               </button>
             </div>
             <p>{copy.reviewLead}</p>
-            {rows.length === 0 ? (
+            <p data-testid="holds-waiting">{holdsWaitingLine(lang, openHolds)}</p>
+            {holds.length === 0 ? (
               <p className="empty">{copy.activityEmpty}</p>
             ) : (
               <div className="review-scroll" data-testid="review-grid">
                 <div className="ag-theme-quartz review-grid">
-                  <AgGridReact<ReviewRow>
-                    rowData={rows}
+                  <AgGridReact<HoldView>
+                    rowData={holds}
                     columnDefs={columns}
-                    context={{ onDecide, copy }}
+                    defaultColDef={{ filter: true, sortable: true, resizable: true }}
+                    context={{ onDecideHold, copy }}
                     domLayout="autoHeight"
-                    getRowId={(p) => `${p.data.jobId}:${p.data.itemId}`}
+                    getRowId={(p) => p.data.jobId}
                     headerHeight={36}
-                    rowHeight={42}
+                    rowHeight={46}
                     suppressCellFocus={false}
                     animateRows={false}
                   />

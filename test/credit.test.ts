@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { creditPlan, fundInParts } from "../src/sellers/credit.js";
 import { Desk } from "../src/server/desk.js";
-import { aggregateSellers, loadFrozenExport, pickSeller, pickSellerFor, type SellerStats } from "../src/sellers/index.js";
+import { aggregateSellers, approvalSentence, loadFrozenExport, pickSeller, pickSellerFor, type SellerStats } from "../src/sellers/index.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
 import { good, setup } from "./helpers.js";
 
@@ -129,6 +129,60 @@ describe("seller track record decides the hold", () => {
     expect(company.seller.resourceKey).not.toMatch(/header/i);
     expect(creditPlan(company.seller, 25).parts).toBeGreaterThan(1);
     expect(creditPlan(fresh!, 25).reason).toBe("New seller: holding in 5 parts");
+  });
+
+  it("does not call a seller with 3 settled purchases Established", () => {
+    const three: SellerStats = {
+      ...established,
+      resourceKey: "company.example/records",
+      attempts: 3,
+      settled: 3,
+      paid2xx: 3,
+      shapeMatch: 3,
+    };
+    const desk = new Desk({
+      rail: new MockPayPalRail(),
+      sellers: new Map([[three.resourceKey, three]]),
+    });
+    const card = desk.plan({ brief: "Collect company records", budgetCents: 5_000, autonomy: "careful", seller: "established" });
+    expect(card.sellerId).toBe(three.resourceKey);
+    expect(card.holdReason).toBe(creditPlan(three, 50).reason);
+    expect(card.holdReason.startsWith("Established")).toBe(false);
+  });
+
+  it("sends a seller with 5 or more settled purchases through creditPlan and calls them Established", () => {
+    const five: SellerStats = { ...established, resourceKey: "five.example", settled: 5, paid2xx: 5, shapeMatch: 5 };
+    const three: SellerStats = {
+      ...established,
+      resourceKey: "company.example/records",
+      attempts: 3,
+      settled: 3,
+      paid2xx: 3,
+      shapeMatch: 3,
+    };
+    const sellers = new Map([
+      [three.resourceKey, three],
+      [five.resourceKey, five],
+    ]);
+    const desk = new Desk({ rail: new MockPayPalRail(), sellers });
+    const card = desk.plan({ brief: "Collect company records", budgetCents: 5_000, autonomy: "careful", seller: "established" });
+    expect(card.sellerId).toBe(five.resourceKey);
+    expect(card.sellerLine).toBe(`${five.settled} paid purchases, 100.0% matched the promised shape, 0.0% errors after payment`);
+    expect(card.holdReason).toBe(creditPlan(five, 50).reason);
+    expect(card.holdReason).toBe("Established seller: one hold for the whole job");
+  });
+
+  it("assigns a frozen-export seller with at least 5 settled purchases, and the reason is creditPlan's", () => {
+    const sellers = aggregateSellers(loadFrozenExport().rows);
+    const desk = new Desk({ rail: new MockPayPalRail(), sellers });
+    const card = desk.plan({ brief: "Collect company records", budgetCents: 5_000, autonomy: "careful", seller: "established" });
+    const seller = sellers.get(card.sellerId);
+    expect(seller).toBeTruthy();
+    expect(seller!.settled).toBeGreaterThanOrEqual(5);
+    expect(card.sellerId).not.toMatch(/header/i);
+    expect(card.sellerLine).toBe(approvalSentence(seller!));
+    expect(card.holdReason).toBe(creditPlan(seller!, 50).reason);
+    expect(card.holdReason).toBe("Established seller: one hold for the whole job");
   });
 
   it("puts the part line on the approval card and authorizes a new seller five times", async () => {

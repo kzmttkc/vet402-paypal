@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { activitySentence } from "../src/i18n/copy.js";
 import { createApp, paypalButtonConfig } from "../src/server/app.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
-import { approvalSentence, pickSellerFor, aggregateSellers, loadFrozenExport } from "../src/sellers/index.js";
+import { pickEstablishedSeller } from "../src/sellers/credit.js";
+import { approvalSentence, aggregateSellers, loadFrozenExport } from "../src/sellers/index.js";
 import { T0 } from "./helpers.js";
 
 const BUDGET = 5_000;
@@ -34,11 +35,12 @@ describe("job API, no network", () => {
     const a = app();
     const planned = await post(a, "/api/jobs", brief);
     expect(planned.status).toBe(200);
-    const seller = pickSellerFor(aggregateSellers(loadFrozenExport().rows), "company");
-    expect(seller.sample).toBe(false);
-    expect(planned.json.sellerId).toBe(seller.seller.resourceKey);
+    const seller = pickEstablishedSeller(aggregateSellers(loadFrozenExport().rows));
+    expect(seller).toBeTruthy();
+    expect(seller!.settled).toBeGreaterThanOrEqual(5);
+    expect(planned.json.sellerId).toBe(seller!.resourceKey);
     expect(String(planned.json.sellerId)).not.toMatch(/header/i);
-    expect(planned.json.sellerLine).toBe(approvalSentence(seller.seller));
+    expect(planned.json.sellerLine).toBe(approvalSentence(seller!));
     expect(planned.json.sellerLine).toMatch(/^\d+ paid purchases, \d+\.\d% matched the promised shape, \d+\.\d% errors after payment$/);
     expect(planned.json.conditionId).toMatch(/^cond_[0-9a-f]{64}$/);
     expect(planned.json.holdQuestion).toBe("May I place a hold of $50.00 until each delivery checks out?");

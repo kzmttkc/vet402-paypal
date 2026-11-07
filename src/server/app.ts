@@ -157,6 +157,15 @@ export function createApp(opts: AppOptions = {}): Hono {
 
   app.post("/api/review/reset", (c) => c.json({ rows: desk.resetSamples() }));
 
+  app.post("/api/review/:jobId", async (c) => {
+    const body = await readJson(c);
+    if (!isRecord(body) || (body.decision !== "capture" && body.decision !== "void")) {
+      return c.json({ error: "decision must be capture or void" }, 400);
+    }
+    const rows = await desk.decideHold(c.req.param("jobId"), body.decision);
+    return c.json({ rows });
+  });
+
   app.post("/api/review/:jobId/:itemId", async (c) => {
     const body = await readJson(c);
     if (!isRecord(body) || (body.decision !== "capture" && body.decision !== "void")) {

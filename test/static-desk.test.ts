@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { copyFor } from "../src/i18n/copy.js";
 import { sha256Hex } from "../src/hash/sha256.js";
 import { createDemoDesk, DEMO_SELLER } from "../src/demo/browser-desk.js";
+import { creditPlan } from "../src/sellers/credit.js";
 import { aggregateSellers, approvalSentence, loadFrozenExport, pickSellerFor } from "../src/sellers/index.js";
 import { createHash as shimHash } from "../web/shims/crypto.js";
 import { createBrowserTransport } from "../web/src/browser-api.js";
@@ -28,6 +29,18 @@ describe("static demo", () => {
     expect(approvalSentence(DEMO_SELLER)).toBe(approvalSentence(live.seller));
     expect(DEMO_SELLER.resourceKey).toBe(live.seller.resourceKey);
     expect(live.seller.resourceKey).not.toMatch(/header/i);
+  });
+
+  it("plans the established radio through creditPlan on a seller with at least 5 settled purchases", () => {
+    const sellers = aggregateSellers(loadFrozenExport().rows);
+    const card = createDemoDesk().plan({ brief: "Collect company records", budgetCents: 5_000, autonomy: "careful", seller: "established" });
+    const seller = sellers.get(card.sellerId);
+    expect(seller).toBeTruthy();
+    expect(seller!.settled).toBeGreaterThanOrEqual(5);
+    expect(card.sellerId).not.toBe(DEMO_SELLER.resourceKey);
+    expect(card.sellerLine).toBe(approvalSentence(seller!));
+    expect(card.holdReason).toBe(creditPlan(seller!, 50).reason);
+    expect(card.holdReason.startsWith("Established")).toBe(true);
   });
 
   it("captures the left delivery and voids the right one with no server", async () => {

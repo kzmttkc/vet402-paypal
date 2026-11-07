@@ -129,12 +129,16 @@ export interface Copy {
   colReason: string;
   colHold: string;
   colItem: string;
+  colCount: string;
+  colWaiting: string;
   colKind: string;
   colJob: string;
   colSeller: string;
   colCondition: string;
   capture: string;
+  captureAll: string;
   void: string;
+  voidAll: string;
   activityHeading: string;
   activityLead: string;
   activityEmpty: string;
@@ -275,12 +279,16 @@ const EN: Copy = {
   colReason: "Reason",
   colHold: "Hold",
   colItem: "Item",
+  colCount: "Records",
+  colWaiting: "Waiting",
   colKind: "Kind",
   colJob: "Job",
   colSeller: "Seller",
   colCondition: "Condition",
   capture: "Capture",
+  captureAll: "Capture all",
   void: "Void",
+  voidAll: "Void all",
   activityHeading: "Activity",
   activityLead: "Each line says what PayPal did. Order, authorization, and capture ids sit under Details.",
   activityEmpty: "No PayPal activity yet. A hold writes the first line here.",
@@ -420,12 +428,16 @@ const JA: Copy = {
   colReason: "理由",
   colHold: "与信",
   colItem: "品目",
+  colCount: "件数",
+  colWaiting: "待ち時間",
   colKind: "種別",
   colJob: "仕事",
   colSeller: "売り手",
   colCondition: "条件",
   capture: "確定",
+  captureAll: "すべて確定",
   void: "取り消し",
+  voidAll: "すべて取り消し",
   activityHeading: "記録",
   activityLead: "各行は、PayPal が何をしたかを一文で言います。注文、与信、確定の ID は「詳細」の中です。",
   activityEmpty: "PayPal の記録はまだありません。与信を置くと、最初の一行がここに出ます。",
@@ -695,6 +707,11 @@ export function deliverySentence(lang: Lang, progress: string): string {
     return lang === "ja" ? "人が決めるまで、この分は確定しません。" : "A person decides this part before anything is captured.";
   }
   return lang === "ja" ? "まだ届いていません。" : "This part has not arrived yet.";
+}
+
+export function holdsWaitingLine(lang: Lang, count: number): string {
+  if (lang === "ja") return count === 1 ? "待っている与信は 1 件です" : `待っている与信は ${count} 件です`;
+  return count === 1 ? "1 hold waiting" : `${count} holds waiting`;
 }
 
 export function activitySentence(lang: Lang, type: string, opts?: { replay?: boolean; verdict?: string | null }): string {
