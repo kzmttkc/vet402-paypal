@@ -27,6 +27,37 @@ export type NumberScorer = (input: ScoreInput) => Promise<number>;
 const MODEL_ID = "onnx-community/all-MiniLM-L6-v2-ONNX";
 const REASON_MAX = 160;
 
+/** Instruction-shaped text. A lone word such as "system" is not enough. */
+const INSTRUCTION_SHAPES: readonly RegExp[] = [
+  /\bignore\b[\s\S]{0,80}\b(instructions?|approve)\b/i,
+  /\b(system|assistant)\b[\s\S]{0,60}\b(instructions?|approve|ignore)\b/i,
+  /<\s*\/?\s*(system|instructions?)\b/i,
+  /\bnew instruction\b/i,
+  /\byou are now\b/i,
+  /\boutput\s+outcome\s*=\s*capture\b/i,
+];
+
+export function instructionShape(value: string): boolean {
+  return INSTRUCTION_SHAPES.some((re) => re.test(value));
+}
+
+/** Declared string fields whose value is an instruction, not an extra key the schema never asked for. */
+export function suspiciousPaths(spec: ConditionSpec, data: unknown): string[] {
+  const hits: string[] = [];
+  for (const [path, type] of Object.entries(spec.fields)) {
+    if (type !== "string") continue;
+    const at = valuesAt(data, path);
+    if (at.values.some((v) => typeof v === "string" && instructionShape(v))) hits.push(path);
+  }
+  return hits;
+}
+
+/** A point strictly inside the human band when the band exists. */
+export function humanBandScore(ai: { passAt: number; voidBelow: number }): number {
+  if (ai.voidBelow < ai.passAt) return ai.voidBelow + (ai.passAt - ai.voidBelow) / 2;
+  return 0;
+}
+
 let embedderOverride: Embedder | null = null;
 let pipelinePromise: Promise<(text: string) => Promise<ArrayLike<number>>> | null = null;
 
@@ -151,6 +182,10 @@ export function embeddingDetail(cond: FixedCondition, embed: Embedder = activeEm
   return async (input) => {
     const failed = ruleFailure(cond.spec, input.data);
     if (failed) return { score: 0.2, reason: clipReason(failed) };
+    const flagged = suspiciousPaths(cond.spec, input.data);
+    if (flagged.length > 0) {
+      return { score: humanBandScore(cond.spec.ai), reason: clipReason(`suspicious instruction in ${flagged.join(", ")}`) };
+    }
     const description = await embed(input.conditionDescription);
     const lines = quotedFieldBlock(cond.spec, input.data).split("\n").filter((l) => l.length > 0);
     let sum = 0;
@@ -205,7 +240,13 @@ function readScore(payload: unknown): ScoreDetail {
 /** Claude scorer that sees only the description plus quoted field lines. */
 export function claudeDetailFor(cond: FixedCondition, apiKey: string, fetchImpl: FetchLike, model = "claude-sonnet-4-5"): DetailScorer {
   const key = apiKey.trim();
-  return async (input) => callClaude(key, fetchImpl, model, input.conditionDescription, quotedFieldBlock(cond.spec, input.data));
+  return async (input) => {
+    const flagged = suspiciousPaths(cond.spec, input.data);
+    if (flagged.length > 0) {
+      return { score: humanBandScore(cond.spec.ai), reason: clipReason(`suspicious instruction in ${flagged.join(", ")}`) };
+    }
+    return callClaude(key, fetchImpl, model, input.conditionDescription, quotedFieldBlock(cond.spec, input.data));
+  };
 }
 
 async function callClaude(key: string, fetchImpl: FetchLike, model: string, description: string, quoted: string): Promise<ScoreDetail> {

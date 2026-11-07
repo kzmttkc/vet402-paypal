@@ -1,6 +1,6 @@
 import type { FieldType, FixedCondition } from "./condition.js";
 import { valuesAt } from "./paths.js";
-import { scorerFromEnv } from "./score.js";
+import { humanBandScore, scorerFromEnv, suspiciousPaths } from "./score.js";
 
 /** What the seller sent back after payment. The body is untrusted data, never instructions. */
 export interface Delivery {
@@ -25,6 +25,7 @@ export const REASON_CODES = [
   "score_low",
   "score_uncertain",
   "scorer_invalid",
+  "suspicious_field",
 ] as const;
 export type ReasonCode = (typeof REASON_CODES)[number];
 
@@ -204,6 +205,11 @@ export async function judge(cond: FixedCondition, d: Delivery, scorer?: Scorer):
     score = raw;
   } catch {
     return fail("ai_score", "human", "scorer_invalid");
+  }
+  // A declared field that reads like an instruction cannot be captured, whatever number the scorer returned.
+  if (suspiciousPaths(spec, data).length > 0) {
+    checks.push({ name: "ai_score", pass: false });
+    return verdict(cond, "human", "suspicious_field", checks, Math.min(score, humanBandScore(spec.ai)));
   }
   if (score >= spec.ai.passAt) {
     checks.push({ name: "ai_score", pass: true });
