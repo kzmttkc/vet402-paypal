@@ -33,7 +33,7 @@ The default score is a local embedding, all-MiniLM-L6-v2. Claude drafts a plan o
 
 ## Challenges
 
-The export has no column for an empty 200, for injected text, or for an instruction sitting in a field the condition did ask for. Those three types are a fixed 12 each in the eval, not a measured share. 7,935 of the 13,893 settled rows also fall outside the five measured buckets, mostly because the paid response has no match/mismatch label. [EVAL.md](../EVAL.md) spells that out.
+The export has no column for an empty 200, for injected text, or for an instruction sitting in a field the condition did ask for. Those three types are a fixed 12 each in the eval, not a measured share. 7,935 of the 13,893 settled rows fall outside the five measured buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. [EVAL.md](../EVAL.md) spells that out.
 
 On 2026-11-07 the constant-vector mock and the downloaded MiniLM printed the same 236-case table. The embedding did not move a case. Structural checks decide most failures before the score runs.
 
