@@ -29,6 +29,19 @@ export interface Copy {
   truthPlay: string;
   truthCaptured: string;
   truthReleased: string;
+  scamHeading: string;
+  scamLead: string;
+  scamSend: string;
+  scamNote: string;
+  scamAmount: string;
+  scamWins: string;
+  scamEmpty: string;
+  scamWrongType: string;
+  scamMissing: string;
+  scamRange: string;
+  scamInstruction: string;
+  scamName: string;
+  scamLate: string;
   honest: string;
   empty: string;
   askHeading: string;
@@ -113,6 +126,19 @@ const EN: Copy = {
   truthPlay: "Run the 50 records",
   truthCaptured: "Captured",
   truthReleased: "Released",
+  scamHeading: "Scam my agent",
+  scamLead: "Hand the agent a fake delivery. A scam that gets through is saved so it can be added to the eval. A scam that fails captures $0.00.",
+  scamSend: "Send to my agent",
+  scamNote: "Instruction or name. Used when you pick those two.",
+  scamAmount: "Captured",
+  scamWins: "This one got through. It is saved in the shape the eval takes.",
+  scamEmpty: "Empty response",
+  scamWrongType: "Wrong type",
+  scamMissing: "Missing field",
+  scamRange: "Out of range",
+  scamInstruction: "Instruction in a field",
+  scamName: "Not a company",
+  scamLate: "Late",
   honest: "Honest delivery",
   empty: "Empty delivery",
   askHeading: "Ask for the job",
@@ -192,6 +218,19 @@ const JA: Copy = {
   truthPlay: "50件を判定する",
   truthCaptured: "確定",
   truthReleased: "解放",
+  scamHeading: "エージェントを騙す",
+  scamLead: "偽の納品を渡します。通ってしまった騙しは、評価に足せる形で残します。弾かれた騙しの確定額は $0.00 です。",
+  scamSend: "エージェントに渡す",
+  scamNote: "指示文か名前。その二つを選んだときに使います。",
+  scamAmount: "確定",
+  scamWins: "これは通りました。評価に足せる形で残してあります。",
+  scamEmpty: "空の応答",
+  scamWrongType: "型が違う",
+  scamMissing: "欄が欠けている",
+  scamRange: "範囲の外",
+  scamInstruction: "欄の中の指示文",
+  scamName: "会社名ではない",
+  scamLate: "遅い",
   honest: "正直な納品",
   empty: "空の納品",
   askHeading: "仕事を頼む",

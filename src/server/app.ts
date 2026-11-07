@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { railFromEnv } from "../rail/select.js";
 import type { PayPalRail } from "../rail/types.js";
 import type { Autonomy } from "../policy/mandate.js";
+import { rememberScamWin } from "../demo/scam-file.js";
+import { isScamKind } from "../demo/scam.js";
 import { Desk, DeskError, type JobView } from "./desk.js";
 import type { DeliveryMode } from "./deliveries.js";
 
@@ -40,7 +42,17 @@ function parsePlan(body: unknown): { brief: string; budgetCents: number; autonom
 }
 
 export function createApp(opts: AppOptions = {}): Hono {
-  const desk = new Desk({ rail: opts.rail ?? railFromEnv(), now: opts.now });
+  const desk = new Desk({
+    rail: opts.rail ?? railFromEnv(),
+    now: opts.now,
+    onScamWin: (win) => {
+      try {
+        rememberScamWin(win);
+      } catch {
+        console.error("scam win was not written");
+      }
+    },
+  });
   const app = new Hono();
 
   app.onError((err, c) => {
@@ -76,6 +88,13 @@ export function createApp(opts: AppOptions = {}): Hono {
   });
 
   app.post("/api/pay-per-truth", async (c) => c.json(await desk.payPerTruth()));
+
+  app.post("/api/scam", async (c) => {
+    const body = await readJson(c);
+    if (!isRecord(body) || !isScamKind(body.kind)) return c.json({ error: "kind must be a prepared scam" }, 400);
+    const text = typeof body.text === "string" ? body.text.slice(0, 200) : "";
+    return c.json(await desk.challenge(body.kind, text));
+  });
 
   app.post("/api/demo", async (c) => {
     const body = await readJson(c);

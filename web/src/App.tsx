@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ScamKind, ScamResult, ScamWin } from "../../src/demo/scam.js";
 import type { TruthResult } from "../../src/pay/truth.js";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
@@ -292,6 +293,103 @@ function ActionCell(props: ICellRendererParams<ReviewRow, unknown, { onDecide: (
   );
 }
 
+const SCAM_PRESETS: { id: ScamKind; label: (copy: Copy) => string }[] = [
+  { id: "empty", label: (copy) => copy.scamEmpty },
+  { id: "wrong_type", label: (copy) => copy.scamWrongType },
+  { id: "missing_field", label: (copy) => copy.scamMissing },
+  { id: "out_of_range", label: (copy) => copy.scamRange },
+  { id: "instruction", label: (copy) => copy.scamInstruction },
+  { id: "not_company", label: (copy) => copy.scamName },
+  { id: "late", label: (copy) => copy.scamLate },
+];
+
+function scamStamp(outcome: string): string {
+  if (outcome === "capture") return "stamp stamp-ok stamp-in";
+  if (outcome === "void") return "stamp stamp-no stamp-in";
+  return "stamp stamp-wait";
+}
+
+function ScamBench({
+  copy,
+  busy,
+  stopped,
+  result,
+  wins,
+  onSend,
+}: {
+  copy: Copy;
+  busy: boolean;
+  stopped: boolean;
+  result: (ScamResult & { wins: ScamWin[] }) | null;
+  wins: ScamWin[];
+  onSend: (kind: ScamKind, text: string) => void;
+}) {
+  const [kind, setKind] = useState<ScamKind>("empty");
+  const [text, setText] = useState("");
+  const usesNote = kind === "instruction" || kind === "not_company";
+  return (
+    <section data-testid="scam-bench" aria-labelledby="scam-title">
+      <h2 id="scam-title">{copy.scamHeading}</h2>
+      <p>{copy.scamLead}</p>
+      <fieldset>
+        <legend>{copy.scamHeading}</legend>
+        <div className="choices">
+          {SCAM_PRESETS.map((preset) => (
+            <label key={preset.id}>
+              <input
+                type="radio"
+                name="scam-kind"
+                value={preset.id}
+                checked={kind === preset.id}
+                onChange={() => setKind(preset.id)}
+              />
+              <span>{preset.label(copy)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <label className="block" htmlFor="scam-text">
+        {copy.scamNote}
+      </label>
+      <textarea
+        id="scam-text"
+        value={text}
+        maxLength={200}
+        disabled={!usesNote}
+        onChange={(event) => setText(event.target.value)}
+      />
+      <button
+        type="button"
+        className="play"
+        data-testid="scam-send"
+        disabled={busy || stopped}
+        onClick={() => onSend(kind, usesNote ? text : "")}
+      >
+        {copy.scamSend}
+      </button>
+      {result && (
+        <article className="side" data-testid="scam-result">
+          <p className={scamStamp(result.outcome)} data-testid="scam-outcome">
+            {result.outcome.toUpperCase()}
+          </p>
+          <p data-testid="scam-reason">{result.reason}</p>
+          <p className="summary" data-testid="scam-amount">
+            {copy.scamAmount} {result.amount}
+          </p>
+        </article>
+      )}
+      {wins.length > 0 && (
+        <>
+          <p>{copy.scamWins}</p>
+          <pre className="win-log" data-testid="scam-wins">
+            {JSON.stringify(wins, null, 2)}
+          </pre>
+        </>
+      )}
+    </section>
+  );
+}
+
 export function App({ simulated = false }: { simulated?: boolean }) {
   const [lang] = useState<Lang>(() => langFromSearch(window.location.search));
   const copy = copyFor(lang);
@@ -302,6 +400,16 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [job, setJob] = useState<JobView | null>(null);
   const [demo, setDemo] = useState<{ left: JobView; right: JobView } | null>(null);
   const [truth, setTruth] = useState<TruthResult | null>(null);
+  const [scam, setScam] = useState<(ScamResult & { wins: ScamWin[] }) | null>(null);
+  const [scamWins, setScamWins] = useState<ScamWin[]>(() => {
+    try {
+      const raw = localStorage.getItem("vet402-scam-wins");
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      return Array.isArray(parsed) ? (parsed as ScamWin[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [chains, setChains] = useState<{ jobId: string; headHash: string }[]>([]);
@@ -311,6 +419,20 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [scorePhase, setScorePhase] = useState<PageScorePhase | null>(null);
   const speechRef = useRef<SpeechSession | null>(null);
   const canSpeak = speechConstructor(window as unknown as SpeechHost) !== null;
+
+  useEffect(() => {
+    if (!scam?.win) return;
+    setScamWins((prev) => {
+      if (prev.some((win) => win.id === scam.win?.id)) return prev;
+      const next = [...prev, scam.win!];
+      try {
+        localStorage.setItem("vet402-scam-wins", JSON.stringify(next));
+      } catch {
+        /* the list on screen is enough */
+      }
+      return next;
+    });
+  }, [scam]);
 
   useEffect(() => {
     document.documentElement.lang = copy.htmlLang;
@@ -439,6 +561,19 @@ export function App({ simulated = false }: { simulated?: boolean }) {
           onPlay={() =>
             void run(async () => {
               setTruth(await api<TruthResult>("/api/pay-per-truth", {}));
+            })
+          }
+        />
+
+        <ScamBench
+          copy={copy}
+          busy={busy}
+          stopped={health?.stopped === true}
+          result={scam}
+          wins={scamWins}
+          onSend={(kind, text) =>
+            void run(async () => {
+              setScam(await api<ScamResult & { wins: ScamWin[] }>("/api/scam", { kind, text }));
             })
           }
         />

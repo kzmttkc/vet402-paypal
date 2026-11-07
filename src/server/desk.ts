@@ -7,7 +7,8 @@ import { PolicyStore, type Autonomy } from "../policy/mandate.js";
 import type { PayPalRail } from "../rail/types.js";
 import { aggregateSellers, approvalSentence, loadFrozenExport, pickSeller, type SellerStats } from "../sellers/index.js";
 import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
-import { type Outcome, type Scorer } from "../verify/judge.js";
+import { defaultScorerFor, type Outcome, type Scorer } from "../verify/judge.js";
+import { isScamKind, judgeScam, scamScorer, type ScamResult, type ScamWin } from "../demo/scam.js";
 import { deliveryFor, type DeliveryMode } from "./deliveries.js";
 import { settlePayPerTruth, TRUTH_COUNT, TRUTH_HOLD_CENTS, TRUTH_PASSED, type TruthResult } from "../pay/truth.js";
 
@@ -161,11 +162,21 @@ export class Desk {
 
   private readonly scorer: Scorer | undefined;
 
-  constructor(opts: { rail: PayPalRail; now?: () => number; sellers?: ReadonlyMap<string, SellerStats>; scorer?: Scorer }) {
+  private readonly onScamWin: ((win: ScamWin) => void) | undefined;
+  private readonly scamWins: ScamWin[] = [];
+
+  constructor(opts: {
+    rail: PayPalRail;
+    now?: () => number;
+    sellers?: ReadonlyMap<string, SellerStats>;
+    scorer?: Scorer;
+    onScamWin?: (win: ScamWin) => void;
+  }) {
     this.rail = opts.rail;
     this.railName = opts.rail.name === "paypal-sandbox" ? "sandbox" : "mock";
     this.now = opts.now ?? (() => Date.now());
     this.scorer = opts.scorer;
+    this.onScamWin = opts.onScamWin;
     const sellers = opts.sellers ?? aggregateSellers(loadFrozenExport().rows);
     this.seller = pickSeller(sellers);
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
@@ -220,6 +231,38 @@ export class Desk {
     for (const item of job.items) deliveries[item.itemId] = delivery;
     await job.engine.settle(job.jobId, deliveries);
     return this.view(job);
+  }
+
+  /** One fake delivery. A capture is a scam that worked and is kept for the eval. */
+  async challenge(kind: string, text = ""): Promise<ScamResult & { wins: ScamWin[] }> {
+    if (!isScamKind(kind)) throw new DeskError(400, "kind must be a prepared scam");
+    if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
+    const jobId = `scam_${randomUUID()}`;
+    const job: Planned = {
+      jobId,
+      brief: "Scam my agent",
+      autonomy: "autopilot",
+      budgetCents: 100,
+      items: [{ itemId: "delivery", label: "One delivery", priceCents: 100 }],
+      engine: null,
+    };
+    const base = this.scorer ?? defaultScorerFor(this.conditions.get(this.conditionId));
+    const engine = this.openEngine(job, scamScorer(base));
+    job.engine = engine;
+    this.jobs.set(jobId, job);
+    const done = await judgeScam(
+      engine,
+      this.conditionId,
+      kind,
+      text,
+      (win) => {
+        this.scamWins.push(win);
+        this.onScamWin?.(win);
+      },
+      this.seller.resourceKey,
+      jobId,
+    );
+    return { ...done, wins: [...this.scamWins] };
   }
 
   /** One hold for 50 records. 37 pass. Capture is 37/50 of the hold; the rest is released. */
@@ -370,7 +413,7 @@ export class Desk {
     return out;
   }
 
-  private openEngine(job: Planned): PaymentEngine {
+  private openEngine(job: Planned, scorer: Scorer | undefined = this.scorer): PaymentEngine {
     return new PaymentEngine({
       rail: this.rail,
       policy: new PolicyStore({
@@ -387,7 +430,7 @@ export class Desk {
       conditions: this.conditions,
       now: this.now,
       ledger: new Ledger(this.now),
-      scorer: this.scorer,
+      scorer,
     });
   }
 

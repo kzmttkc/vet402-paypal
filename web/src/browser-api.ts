@@ -1,6 +1,7 @@
 import type { Autonomy } from "../../src/policy/mandate.js";
 import type { Scorer } from "../../src/verify/judge.js";
 import { createDemoDesk } from "../../src/demo/browser-desk.js";
+import { isScamKind } from "../../src/demo/scam.js";
 import { Desk, DeskError } from "../../src/server/desk.js";
 import type { DeliveryMode } from "../../src/server/deliveries.js";
 import type { Transport } from "./transport.js";
@@ -54,6 +55,12 @@ async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknow
   if (one && body === undefined) return desk.job(decodeURIComponent(one[1] ?? ""));
 
   if (path === "/api/pay-per-truth" && body !== undefined) return desk.payPerTruth();
+
+  if (path === "/api/scam" && body !== undefined) {
+    if (!isRecord(body) || !isScamKind(body.kind)) return fail("kind must be a prepared scam");
+    const text = typeof body.text === "string" ? body.text.slice(0, 200) : "";
+    return desk.challenge(body.kind, text);
+  }
 
   if (path === "/api/demo" && body !== undefined) {
     const budget = isRecord(body) && body.budgetCents !== undefined ? body.budgetCents : 5_000;

@@ -193,6 +193,19 @@ p { margin: 0.35rem 0 0; }
 .mark-pass { color: var(--moss); font-weight: 600; }
 .mark-fail { color: var(--oxide); font-weight: 600; }
 
+.win-log {
+  max-height: 14rem;
+  overflow: auto;
+  margin: 0.6rem 0 0;
+  padding: 0.7rem 0.75rem;
+  background: var(--ink);
+  color: var(--sheet);
+  border-radius: 2px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
 .pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
