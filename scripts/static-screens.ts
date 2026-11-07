@@ -35,7 +35,7 @@ try {
   await desktop.goto(pageUrl);
   await desktop.getByTestId("sim-banner").waitFor();
   const banner = (await desktop.getByTestId("sim-banner").innerText()).trim();
-  if (banner !== "模擬・お金は動かない") throw new Error(`banner: ${banner}`);
+  if (banner !== "Simulated. No money moves.") throw new Error(`banner: ${banner}`);
   const heading = (await desktop.getByTestId("page-heading").innerText()).trim();
   if (heading !== "Place a hold. Pay only for what arrived.") throw new Error(`default heading: ${heading}`);
   if ((await desktop.locator("main").getAttribute("data-lang")) !== "en") throw new Error("default lang is not en");
