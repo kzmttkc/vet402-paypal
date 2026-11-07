@@ -18,11 +18,11 @@ The public demo URL is TBD as of 2026-11-07. Nothing in this repository is a hos
 |---|---|
 | Public demo | TBD |
 | `npm install && npm run dev`, then open http://127.0.0.1:5173 | the hold screen, in English. The banner says this session is on the mock rail and no money moves. `?lang=ja` switches the screen to Japanese. Amounts and ids stay as they are. |
-| **Play the same job both ways** | left **CAPTURED**, right **VOIDED**, and "$0. Your agent didn't lose a cent." While Qwen3 is downloading, the screen says `AI model loading: n%`. The pair still resolves, and the same process switches to Qwen3 when the download finishes. |
-| Type a job, pick a budget and Supervised / Supervised under a limit / Automatic, then **Show the plan** | what is being bought, how many, the price, and the seller's track record in one line |
-| **Place the hold**, then **Deliver the records** / **Deliver nothing** / **Deliver late** | PASS → captured, FAIL → voided, or UNSURE → a person, then "Captured $a of $b hold. $c released." |
+| **Play** | Pay per truth. Each record lands PASS or FAIL, the captured amount counts up, and the released amount climbs with it. The first passing record reads CAPTURED. While Qwen3 is downloading, the screen says `AI model loading: n%`. |
+| Type or speak a job, pick a budget and Supervised / Supervised under a limit / Automatic, then **Show the plan** | what is being bought, how many, the price, and the seller's track record in one line. **Continue to approval** opens the sheet. With no `PAYPAL_CLIENT_ID` the sheet says the approval is simulated. |
+| **Approve the hold**, then **Deliver the records** / **Deliver nothing** / **Deliver late** | each part shows PASS, FAIL, or UNSURE and one sentence of why, then "Captured $a of $b hold. $c released." |
 | Scroll to **With a person** | sample holds in the grid. **Reset samples** puts them back. |
-| Scroll to **Activity** | order, authorization, capture, and refund ids, the verdict, and the ledger hash |
+| Scroll to **Activity** | one plain sentence per PayPal step. Order, authorization, and capture ids are inside **Details**. |
 | **Void every open hold** | every open authorization is voided |
 
 `npm test` needs no key and no network. `npm run dev` serves the API on port 8787 and the screen on port 5173. Leave `PAYPAL_ENV` unset and the screen stays on the mock.

@@ -20,7 +20,7 @@ Spoken lines only. Clicks happen under the line, not instead of it.
 
 **1:35** This is the stop. Void every open hold. It voids open authorizations, and it will not open a new one.
 
-**1:48** Try it in two minutes. The public URL is still TBD. Locally: `npm install`, `npm run dev`, then open 127.0.0.1 port 5173. While Qwen3 downloads, the screen says `AI model loading: n%`. Play still shows CAPTURED on the left and VOIDED on the right. The mock moves no money.
+**1:48** Try it in two minutes. The public URL is still TBD. Locally: `npm install`, `npm run dev`, then open 127.0.0.1 port 5173. Press Play. While Qwen3 downloads, the screen says `AI model loading: n%`. The first pass reads CAPTURED. The mock moves no money. Supervised approval is PayPal's button when `PAYPAL_CLIENT_ID` is set, and a simulated sheet when it is not.
 
 **2:05** The hold stays at PayPal. This page only decides whether to capture, void, or ask a person.
 

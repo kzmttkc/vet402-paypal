@@ -88,9 +88,9 @@ No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.
 2. `npm test` (no network)
 3. `npm run dev`
 4. Open http://127.0.0.1:5173
-5. **Play the same job both ways.** The left side reads CAPTURED. The right side reads VOIDED. If Qwen3 is still downloading, the screen says `AI model loading: n%` and the pair still resolves. When the download finishes, the same process scores with Qwen3. No restart.
-6. **Show the plan.** The seller line is counted from the frozen export. The levels read Supervised, Supervised under a limit, and Automatic.
-7. **Place the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**.
+5. **Play.** Records land PASS or FAIL. The captured amount counts up. The first pass reads CAPTURED. If Qwen3 is still downloading, the screen says `AI model loading: n%`. When the download finishes, the same process scores with Qwen3. No restart.
+6. **Show the plan.** The seller line is counted from the frozen export. The levels read Supervised, Supervised under a limit, and Automatic. **Continue to approval**. With no `PAYPAL_CLIENT_ID` the sheet says the approval is simulated.
+7. **Approve the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**. Each part has a verdict and one sentence. **Activity** says what happened; ids are under Details.
 8. **Void every open hold.** Open authorizations void.
 9. Optional: `npm run eval`. The summary line should match [EVAL.md](../EVAL.md): 248 cases and `false_approvals=0`. It does not download a model.
 
@@ -106,8 +106,8 @@ No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.
 
 2. `npm install && npm run build && npm start` (or `npm run dev` with the same `.env`). The process listens on `PORT`, 8787 if unset.
 3. Open the URL. The banner says this session talks to the PayPal sandbox.
-4. The buyer is PayPal's public test card, sent by the server. No buyer login. Number `4012888888881881`, expiry `2030-12`, security code `123`, name `Sandbox Buyer` (`src/rail/select.ts`).
-5. Play a job, or place a hold and deliver the records. **Activity** lists the sandbox order, authorization, capture, and refund ids.
+4. Supervised approval uses PayPal's own button (JavaScript SDK v6) when `PAYPAL_CLIENT_ID` is set. The buyer approves in PayPal's screen. Paths that do not open that button still authorize with PayPal's public test card on the server: number `4012888888881881`, expiry `2030-12`, security code `123`, name `Sandbox Buyer` (`src/rail/select.ts`).
+5. Play a job, or approve a hold and deliver the records. **Activity** says what happened in one sentence. Order, authorization, and capture ids are under Details.
 6. `npm run sandbox:run` repeats authorize, partial capture, void, refund, and a vaulted card, and writes `docs/sandbox-run.json`. `npm run test:sandbox` is the live test file.
 
 A saved PayPal balance needs one approval in a browser. The recorded order `92J5084030716252J` was left at `PAYER_ACTION_REQUIRED`. The vaulted-card path does not need that login.
