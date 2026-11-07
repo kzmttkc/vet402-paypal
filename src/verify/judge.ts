@@ -1,4 +1,6 @@
 import type { FieldType, FixedCondition } from "./condition.js";
+import { valuesAt } from "./paths.js";
+import { scorerFromEnv } from "./score.js";
 
 /** What the seller sent back after payment. The body is untrusted data, never instructions. */
 export interface Delivery {
@@ -48,30 +50,6 @@ export interface ScorerInput {
 }
 export type Scorer = (input: ScorerInput) => number | Promise<number>;
 
-// ---------------------------------------------------------------- path helpers
-
-function valuesAt(root: unknown, path: string): { found: boolean; values: unknown[] } {
-  const parts = path.split(".");
-  let current: unknown[] = [root];
-  for (const raw of parts) {
-    const isEach = raw.endsWith("[]");
-    const key = isEach ? raw.slice(0, -2) : raw;
-    const next: unknown[] = [];
-    for (const node of current) {
-      if (node === null || typeof node !== "object" || Array.isArray(node) || !Object.hasOwn(node, key)) {
-        return { found: false, values: [] };
-      }
-      const v = (node as Record<string, unknown>)[key];
-      if (isEach) {
-        if (!Array.isArray(v)) return { found: false, values: [] };
-        next.push(...v);
-      } else next.push(v);
-    }
-    current = next;
-  }
-  return { found: true, values: current };
-}
-
 function hasType(v: unknown, t: FieldType): boolean {
   switch (t) {
     case "string":
@@ -100,9 +78,8 @@ function isEmptyPayload(v: unknown): boolean {
 // ---------------------------------------------------------------- deterministic scorer
 
 /**
- * Deterministic stand-in for the AI scorer: the share of declared string values that are non-blank.
- * It reads structure only, so no sentence inside the data can move the score.
- * Swap in a model-backed scorer later; it must keep the same signature and return one number.
+ * Deterministic stand-in: the share of declared string values that are non-blank.
+ * Kept for callers that want a score with no model. The default scorer is the embedding one.
  */
 export function completenessScorer(stringPaths: readonly string[]): Scorer {
   return ({ data }) => {
@@ -118,11 +95,9 @@ export function completenessScorer(stringPaths: readonly string[]): Scorer {
   };
 }
 
+/** Default scorer: local embeddings, or Claude when ANTHROPIC_API_KEY is set. Still returns one number. */
 export function defaultScorerFor(cond: FixedCondition): Scorer {
-  const stringPaths = Object.entries(cond.spec.fields)
-    .filter(([, t]) => t === "string")
-    .map(([p]) => p);
-  return completenessScorer(stringPaths);
+  return scorerFromEnv(cond, process.env);
 }
 
 // ---------------------------------------------------------------- the judge
