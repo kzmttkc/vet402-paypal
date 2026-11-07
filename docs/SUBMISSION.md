@@ -27,21 +27,21 @@ The rail is PayPal Orders v2 and Payments v2 with `intent=AUTHORIZE`: create the
 
 The seller line and the eval mix read `data/observatory_export.csv` (22,071 rows, sha256 `c0fea21a1b476ec853588f1215da174d29cfe0d823ad0877719fe75cbb232169`). The loader refuses the file if the hash changes. Amounts are integer cents from the job plan. The judge cannot name an amount.
 
-The default score is a local embedding, all-MiniLM-L6-v2. Claude drafts a plan or replaces that score only when `ANTHROPIC_API_KEY` is set. The published eval did not call Claude.
+The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a plan or replaces that score only when `ANTHROPIC_API_KEY` is set. The published eval did not call Claude. The static page is too small for the 570MB weights, so it scores with all-MiniLM-L6-v2 and says so.
 
 `npm run mcp` exposes plan, hold, check, settle, and stop on the mock. Hold and settle refuse unless `confirm` is true.
 
 ## Challenges
 
-The export has no column for an empty 200, for injected text, or for an instruction sitting in a field the condition did ask for. Those three types are a fixed 12 each in the eval, not a measured share. 7,935 of the 13,893 settled rows fall outside the five measured buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. [EVAL.md](../EVAL.md) spells that out.
+The export has no column for an empty 200, for injected text, for an instruction sitting in a field the condition did ask for, or for a shape-valid delivery whose names are not companies. Those four types are a fixed 12 each in the eval, not a measured share. 7,935 of the 13,893 settled rows fall outside the five measured buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. [EVAL.md](../EVAL.md) spells that out.
 
-On 2026-11-07 the constant-vector mock and the downloaded MiniLM printed the same 236-case table. The embedding did not move a case. Structural checks decide most failures before the score runs.
+On 2026-11-07 the constant-vector mock and the downloaded MiniLM printed the same 236-case table. The embedding did not move a case. Structural checks decide most failures before the score runs. A later run the same day added 12 shape-valid deliveries about weather and food. Qwen3 voided all 12. The embedding floor would have captured them.
 
 A capture smaller than the authorization, and a vaulted card while the buyer is away, had to be read back from the sandbox rather than trusted from the response I had just sent. A saved PayPal balance still stops at `PAYER_ACTION_REQUIRED`. I left that order unapproved.
 
 ## Accomplishments
 
-Eval, both scorers, 2026-11-07: 236 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.6% sent to a person. Ledger chain ok. Injected text outside a declared field flipped no verdict.
+Eval, both scorers, 2026-11-07: 236 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.6% sent to a person. Ledger chain ok. Injected text outside a declared field flipped no verdict. The later 248-case run, mock and Qwen3, also had 0 false approvals and captured 124/124. The 12 off-topic deliveries were voided. One warm CPU score of a single name took 417 ms.
 
 Sandbox run `run-20261107034254` (2026-11-07T03:42:54.620Z to 2026-11-07T03:43:41.883Z, `api-m.sandbox.paypal.com`). Every id below was read back with GET. Detail is `docs/sandbox-run.json`.
 
@@ -72,8 +72,9 @@ AI used, and what it did:
 | Claude Code | I used it to write and revise the TypeScript in this repository. |
 | Cursor | I used it to edit this repository, run the suite, and review the diff. |
 | Grok | I used Grok inside Cursor to run the eval, read the Devpost rules, and draft EVAL.md, the README, this text, and the video script. |
-| all-MiniLM-L6-v2 | The default score. The ONNX build `onnx-community/all-MiniLM-L6-v2-ONNX` is downloaded from huggingface.co. No key. The 2026-11-07 eval ran it once. |
-| Claude (optional) | If `ANTHROPIC_API_KEY` is set, `claude-sonnet-4-5` (or `ANTHROPIC_MODEL`) drafts the job plan or replaces the embedding score. Amounts stay in code. The published eval did not call Claude. |
+| Qwen3-0.6B | The default score. The ONNX build `onnx-community/Qwen3-0.6B-ONNX` (q4f16, about 570MB) is downloaded from huggingface.co. No key. |
+| all-MiniLM-L6-v2 | The static page's score, because Qwen3 is too large for that page. The ONNX build `onnx-community/all-MiniLM-L6-v2-ONNX` is downloaded from huggingface.co. No key. |
+| Claude (optional) | If `ANTHROPIC_API_KEY` is set, `claude-sonnet-4-5` (or `ANTHROPIC_MODEL`) drafts the job plan or replaces the local score. Amounts stay in code. The published eval did not call Claude. |
 
 ## Testing instructions
 

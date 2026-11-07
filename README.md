@@ -89,6 +89,12 @@ On 2026-11-07, `npm run eval` (constant-vector mock, no download) and `EMBEDDER=
 
 False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 10.6%. The measured mix follows settled rows in the frozen export. Empty bodies, injected text, and an instruction inside a declared field have no column there, so each of those types is a fixed 12. Detail, both full tables, and the row counts: [EVAL.md](EVAL.md).
 
+A later run on the same day added 12 deliveries whose shape is valid and whose names are not companies. `npm run eval` (no download) and `SCORER=transformers npm run eval` (`onnx-community/Qwen3-0.6B-ONNX`, q4f16, no token, no `ANTHROPIC_API_KEY`) both printed:
+
+`eval cases=248 false_approvals=0 correct_approval_rate=100.0% human_rate=10.1% injection_flips=0 rail_captures=124 ledger_chain=ok`
+
+Qwen3 voided all 12. One warm CPU score of a single name took 417 ms. The static page does not download this model (about 570MB). It scores with the MiniLM embedding and says so.
+
 ## Sandbox record
 
 `docs/sandbox-run.json` is one pass against `api-m.sandbox.paypal.com` on 2026-11-07. Run id `run-20261107034254`, started 2026-11-07T03:42:54.620Z, finished 2026-11-07T03:43:41.883Z. The file says every id and status was read back with GET after the call that made it. No live charge. The card is PayPal's public test card `4012888888881881`.
@@ -119,7 +125,7 @@ False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 10.6
 | `emergency_stop` | Voids every open authorization. |
 | `get_activity` | Ledger lines: order, authorization, capture, void, hash. |
 
-The first score downloads `all-MiniLM-L6-v2` into `.cache/transformers` from the public Hugging Face repo named above. Set `ANTHROPIC_API_KEY` only if Claude should draft the plan or replace the score (`claude-sonnet-4-5`, unless `ANTHROPIC_MODEL` is set). The key is not printed. Prices stay computed in code. The eval in [EVAL.md](EVAL.md) did not call Claude.
+The first score downloads `onnx-community/Qwen3-0.6B-ONNX` (q4f16, about 570MB) into `.cache/transformers` from the public Hugging Face repo. No hub token is sent. Set `ANTHROPIC_API_KEY` only if Claude should draft the plan or replace that score (`claude-sonnet-4-5`, unless `ANTHROPIC_MODEL` is set). The key is not printed. Prices stay computed in code. The eval in [EVAL.md](EVAL.md) did not call Claude.
 
 Claude Desktop, in `claude_desktop_config.json`:
 
