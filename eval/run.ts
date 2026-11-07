@@ -8,6 +8,7 @@ import { MockPayPalRail } from "../src/rail/mock.js";
 import { loadFrozenExport } from "../src/sellers/load.js";
 import { ConditionRegistry } from "../src/verify/condition.js";
 import { judge } from "../src/verify/judge.js";
+import { useLanguageAsk } from "../src/verify/language.js";
 import { useEmbedder } from "../src/verify/score.js";
 import { buildCases, type EvalCase } from "./cases.js";
 import { COMPANY_RECORDS } from "./condition.js";
@@ -34,8 +35,10 @@ export interface EvalReport {
 }
 
 export async function runEval(): Promise<EvalReport> {
-  // Offline stand-in. Set EMBEDDER=transformers before `npm run eval` to use all-MiniLM-L6-v2.
-  if (process.env.EMBEDDER !== "transformers") useEmbedder(async () => Float32Array.of(1, 0, 0));
+  // Offline stand-in. Set SCORER=transformers before `npm run eval` to use Qwen3.
+  useEmbedder(async () => Float32Array.of(1, 0, 0));
+  if (process.env.SCORER === "transformers") useLanguageAsk(null);
+  else useLanguageAsk(async () => "Yes.");
   const { rows, meta } = loadFrozenExport();
   const mix = measureMix(rows);
   const counts = {

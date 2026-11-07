@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import type { ConditionSpec, FieldType, FixedCondition } from "./condition.js";
+import type { LanguageScore } from "./language.js";
 import { valuesAt } from "./paths.js";
 
 /**
@@ -294,18 +295,21 @@ export function detailToScorer(detail: DetailScorer): NumberScorer {
 }
 
 /**
- * Embedding scorer by default. Claude only when `ANTHROPIC_API_KEY` is a non-empty string.
+ * Local Qwen3 by default. Claude only when `ANTHROPIC_API_KEY` is a non-empty string.
  * The key is sent as a header and is never written into an error.
  */
 export function scorerFromEnv(
   cond: FixedCondition,
   env: Record<string, string | undefined>,
   fetchImpl: FetchLike = ((url, init) => fetch(url, init)) as FetchLike,
-): NumberScorer {
+): (input: ScoreInput) => Promise<number | LanguageScore> {
   const key = env.ANTHROPIC_API_KEY?.trim();
   if (key) {
     const model = env.ANTHROPIC_MODEL?.trim();
     return detailToScorer(model ? claudeDetailFor(cond, key, fetchImpl, model) : claudeDetailFor(cond, key, fetchImpl));
   }
-  return detailToScorer(embeddingDetail(cond));
+  return async (input) => {
+    const { activeLanguageAsk, languageDetail } = await import("./language.js");
+    return languageDetail(cond, activeLanguageAsk())(input);
+  };
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { COMPANY_RECORDS } from "../eval/condition.js";
 import { fixCondition } from "../src/verify/condition.js";
 import { judge } from "../src/verify/judge.js";
+import { isLanguageScore } from "../src/verify/language.js";
 import { embeddingDetail, scorerFromEnv, useEmbedder, type Embedder } from "../src/verify/score.js";
 import { good, goodRecords } from "./helpers.js";
 
@@ -48,12 +49,13 @@ describe("embedding scorer", () => {
 });
 
 describe("scorer selection", () => {
-  it("uses the embedding scorer when ANTHROPIC_API_KEY is absent", async () => {
-    useEmbedder(sameVector);
+  it("uses the local language model when ANTHROPIC_API_KEY is absent", async () => {
     const fetchImpl = vi.fn();
     const scorer = scorerFromEnv(cond, {}, fetchImpl as unknown as typeof fetch);
     const score = await scorer({ conditionDescription: cond.spec.description, data: { records: goodRecords } });
-    expect(score).toBeGreaterThanOrEqual(cond.spec.ai.passAt);
+    expect(isLanguageScore(score)).toBe(true);
+    if (!isLanguageScore(score)) return;
+    expect(score.score).toBeGreaterThanOrEqual(cond.spec.ai.passAt);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 

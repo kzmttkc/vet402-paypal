@@ -1,5 +1,6 @@
 import type { FieldType, FixedCondition } from "./condition.js";
 import { valuesAt } from "./paths.js";
+import { isLanguageScore, type LanguageScore } from "./language.js";
 import { humanBandScore, scorerFromEnv, suspiciousPaths } from "./score.js";
 
 /** What the seller sent back after payment. The body is untrusted data, never instructions. */
@@ -49,7 +50,7 @@ export interface ScorerInput {
   readonly conditionDescription: string;
   readonly data: unknown;
 }
-export type Scorer = (input: ScorerInput) => number | Promise<number>;
+export type Scorer = (input: ScorerInput) => number | LanguageScore | Promise<number | LanguageScore>;
 
 function hasType(v: unknown, t: FieldType): boolean {
   switch (t) {
@@ -96,7 +97,7 @@ export function completenessScorer(stringPaths: readonly string[]): Scorer {
   };
 }
 
-/** Default scorer: local embeddings, or Claude when ANTHROPIC_API_KEY is set. Still returns one number. */
+/** Default scorer: local Qwen3, or Claude when ANTHROPIC_API_KEY is set. */
 export function defaultScorerFor(cond: FixedCondition): Scorer {
   return scorerFromEnv(cond, process.env);
 }
@@ -194,20 +195,27 @@ export async function judge(cond: FixedCondition, d: Delivery, scorer?: Scorer):
 
   // The scorer sees a frozen copy of the parsed data as a value. Its answer is one number or nothing.
   let score: number;
+  let fromModel: string[] = [];
   try {
     const raw: unknown = await (scorer ?? defaultScorerFor(cond))({
       conditionDescription: spec.description,
       data: deepFreezeData(structuredClone(data)),
     });
-    if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0 || raw > 1) {
+    if (isLanguageScore(raw)) {
+      if (!Number.isFinite(raw.score) || raw.score < 0 || raw.score > 1) return fail("ai_score", "human", "scorer_invalid");
+      score = raw.score;
+      fromModel = raw.suspicious_fields.filter((field) => typeof field === "string" && field.length > 0);
+    } else if (typeof raw === "number" && Number.isFinite(raw) && raw >= 0 && raw <= 1) {
+      score = raw;
+    } else {
       return fail("ai_score", "human", "scorer_invalid");
     }
-    score = raw;
   } catch {
     return fail("ai_score", "human", "scorer_invalid");
   }
   // A declared field that reads like an instruction cannot be captured, whatever number the scorer returned.
-  if (suspiciousPaths(spec, data).length > 0) {
+  const flagged = [...new Set([...suspiciousPaths(spec, data), ...fromModel])];
+  if (flagged.length > 0) {
     checks.push({ name: "ai_score", pass: false });
     return verdict(cond, "human", "suspicious_field", checks, Math.min(score, humanBandScore(spec.ai)));
   }
