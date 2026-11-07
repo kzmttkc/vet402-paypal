@@ -89,17 +89,13 @@ The x402 column follows the auth-capture page at <https://docs.x402r.org/x402-in
 
 ## Eval
 
-On 2026-11-07, `npm run eval` (constant-vector mock, no download) and `EMBEDDER=transformers npm run eval` (all-MiniLM-L6-v2, ONNX build `onnx-community/all-MiniLM-L6-v2-ONNX`, from huggingface.co, no token) printed the same line:
-
-`eval cases=236 false_approvals=0 correct_approval_rate=100.0% human_rate=10.6% injection_flips=0 rail_captures=124 ledger_chain=ok`
-
-False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 10.6%. The measured mix follows settled rows in the frozen export. Empty bodies, injected text, and an instruction inside a declared field have no column there, so each of those types is a fixed 12. Detail, both full tables, and the row counts: [EVAL.md](EVAL.md).
-
-A later run on the same day added 12 deliveries whose shape is valid and whose names are not companies. `npm run eval` (no download) and `SCORER=transformers npm run eval` (`onnx-community/Qwen3-0.6B-ONNX`, q4f16, no token, no `ANTHROPIC_API_KEY`) both printed:
+`npm run eval` does not download a model. On 2026-11-07 it printed:
 
 `eval cases=248 false_approvals=0 correct_approval_rate=100.0% human_rate=10.1% injection_flips=0 rail_captures=124 ledger_chain=ok`
 
-Qwen3 voided all 12. One warm CPU score of a single name took 417 ms. The static page does not download this model (about 570MB). It scores with the MiniLM embedding and says so.
+False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 25/248 (10.1%). Empty bodies, injected text, an instruction inside a declared field, and a shape-valid delivery whose names are not companies have no column in the export, so each of those types is a fixed 12. Detail: [EVAL.md](EVAL.md).
+
+`SCORER=transformers npm run eval` (`onnx-community/Qwen3-0.6B-ONNX`, q4f16, no token, no `ANTHROPIC_API_KEY`) printed that same 248-case line. Qwen3 voided all 12 off-topic deliveries. One warm CPU score of a single name took 417 ms. The static page does not download this model (about 570MB). It scores with the MiniLM embedding and says so. That embedding floor captures a shape-valid delivery even when the names are not companies, so it does not print this line.
 
 ## Sandbox record
 
@@ -154,8 +150,8 @@ Restart Claude Desktop after saving. Ask it to plan a job, then place the hold o
 | Command | What it does |
 |---|---|
 | `npm test` | the suite. No keys, no network. |
-| `npm run eval` | 236 cases. Summary line quoted above. |
-| `EMBEDDER=transformers npm run eval` | the same 236 cases with the downloaded model. |
+| `npm run eval` | 248 cases. Summary line quoted above. No download. |
+| `SCORER=transformers npm run eval` | the same 248 cases with Qwen3. Downloads the public model. |
 | `npm run sellers` | totals of the frozen export and the approval-card line for the top sellers |
 | `npm run fetch:export` | a fresh copy of the public export, frozen to `data/` with its sha256 |
 | `npm run typecheck` | `tsc`, both the server and the screen |

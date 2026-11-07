@@ -37,13 +37,13 @@ The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a p
 
 The export has no column for an empty 200, for injected text, for an instruction sitting in a field the condition did ask for, or for a shape-valid delivery whose names are not companies. Those four types are a fixed 12 each in the eval, not a measured share. 7,935 of the 13,893 settled rows fall outside the five measured buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. [EVAL.md](../EVAL.md) spells that out.
 
-On 2026-11-07 the constant-vector mock and the downloaded MiniLM printed the same 236-case table. The embedding did not move a case. Structural checks decide most failures before the score runs. A later run the same day added 12 shape-valid deliveries about weather and food. Qwen3 voided all 12. The embedding floor would have captured them.
+Structural checks decide most failures before the score runs. Twelve shape-valid deliveries about weather and food are in the 248. Qwen3 voided all 12. The embedding floor would have captured them. MiniLM is not the scorer that printed this table.
 
 A capture smaller than the authorization, and a vaulted card while the buyer is away, had to be read back from the sandbox rather than trusted from the response I had just sent. A saved PayPal balance still stops at `PAYER_ACTION_REQUIRED`. I left that order unapproved.
 
 ## Accomplishments
 
-Eval, both scorers, 2026-11-07: 236 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.6% sent to a person. Ledger chain ok. Injected text outside a declared field flipped no verdict. The later 248-case run, mock and Qwen3, also had 0 false approvals and captured 124/124. The 12 off-topic deliveries were voided. One warm CPU score of a single name took 417 ms.
+`npm run eval` on 2026-11-07: 248 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.1% sent to a person (25/248). Ledger chain ok. Injected text outside a declared field flipped no verdict. Qwen3 voided the 12 off-topic deliveries. One warm CPU score of a single name took 417 ms.
 
 Sandbox run `run-20261107034254` (2026-11-07T03:42:54.620Z to 2026-11-07T03:43:41.883Z, `api-m.sandbox.paypal.com`). Every id below was read back with GET. Detail is `docs/sandbox-run.json`.
 
@@ -92,7 +92,7 @@ No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.
 6. **Show the approval card.** The seller line is counted from the frozen export.
 7. **Place the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**.
 8. **Void every open hold.** Open authorizations void.
-9. Optional: `npm run eval`. The summary line should match [EVAL.md](../EVAL.md). `EMBEDDER=transformers npm run eval` downloads the public MiniLM and, on 2026-11-07, printed the same line.
+9. Optional: `npm run eval`. The summary line should match [EVAL.md](../EVAL.md): 248 cases and `false_approvals=0`. It does not download a model.
 
 ### Sandbox test card
 
