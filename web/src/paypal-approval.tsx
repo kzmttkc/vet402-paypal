@@ -1,33 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import type { Copy } from "../../src/i18n/copy.js";
 
-export interface PaypalButtonConfig {
+export type PaypalButtonConfig = {
   sdk: "v6";
   script: string | null;
   clientId: string | null;
   mode: "sandbox" | "mock";
-}
+};
 
-interface PaypalSession {
+type PaypalSession = {
   start(presentation: { presentationMode: "auto" }, order: Promise<{ orderId: string }>): Promise<void>;
-}
+};
 
-interface PaypalInstance {
+type PaypalClient = {
   findEligibleMethods(input?: { currencyCode?: string }): Promise<{ isEligible(name: string): boolean }>;
   createPayPalOneTimePaymentSession(options: {
     onApprove: (data: { orderId: string }) => Promise<void> | void;
     onCancel?: () => void;
     onError?: (error: unknown) => void;
   }): PaypalSession | Promise<PaypalSession>;
-}
+};
 
-declare global {
-  interface Window {
-    paypal?: {
-      createInstance(options: { clientId: string; components: string[] }): Promise<PaypalInstance>;
-    };
-  }
-}
+type PaypalWindow = Window & {
+  paypal?: {
+    createInstance(options: { clientId: string; components: string[] }): Promise<PaypalClient>;
+  };
+};
 
 const loads = new Map<string, Promise<void>>();
 
@@ -35,7 +33,7 @@ function loadPaypalScript(src: string): Promise<void> {
   const existing = loads.get(src);
   if (existing) return existing;
   const pending = new Promise<void>((resolve, reject) => {
-    if (document.querySelector('script[data-paypal-sdk="v6"]') && window.paypal) {
+    if (document.querySelector('script[data-paypal-sdk="v6"]') && (window as PaypalWindow).paypal) {
       resolve();
       return;
     }
@@ -81,8 +79,9 @@ function OfficialButton({
     void (async () => {
       try {
         await loadPaypalScript(config.script!);
-        if (cancel || !window.paypal) throw new Error("PayPal's button did not load.");
-        const sdk = await window.paypal.createInstance({
+        const paypal = (window as PaypalWindow).paypal;
+        if (cancel || !paypal) throw new Error("PayPal's button did not load.");
+        const sdk = await paypal.createInstance({
           clientId: config.clientId!,
           components: ["paypal-payments"],
         });

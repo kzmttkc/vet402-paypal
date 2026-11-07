@@ -8,7 +8,7 @@ import { HONEST_BODY } from "../src/server/deliveries.js";
 import { fixCondition } from "../src/verify/condition.js";
 import { judge } from "../src/verify/judge.js";
 import { useLanguageAsk, type LanguageAsk } from "../src/verify/language.js";
-import { beginModelLoad, modelPhase, resetModelLoadForTests, warmingScorer } from "../src/verify/warmup.js";
+import { beginModelLoad, bootLanguageModel, modelPhase, resetModelLoadForTests, useEmbeddingOnly, warmingScorer } from "../src/verify/warmup.js";
 
 const cond = fixCondition(COMPANY_RECORDS);
 const honest = { httpStatus: 200, body: HONEST_BODY, latencyMs: 100 };
@@ -76,6 +76,17 @@ describe("model warmup", () => {
     const again = await desk.playBoth(5_000);
     expect(again.left.status).toBe("captured");
     expect(again.right.status).toBe("voided");
+  });
+
+  it("does not load Qwen3 when SCORER=embedding", async () => {
+    useLanguageAsk(async () => "No.");
+    bootLanguageModel({ SCORER: "embedding" });
+    expect(modelPhase()).toEqual({ phase: "embedding", ratio: 1 });
+    const scorer = warmingScorer(cond);
+    const verdict = await judge(cond, wrong, scorer);
+    expect(verdict.outcome).toBe("capture");
+    useEmbeddingOnly();
+    expect((await judge(cond, honest, warmingScorer(cond))).outcome).toBe("capture");
   });
 
   it("forgets a failed load and still captures with the embedding floor", async () => {

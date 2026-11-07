@@ -6,6 +6,7 @@ import {
   presentHoldQuestion,
   presentSellerLine,
   presentSummary,
+  embeddingFloorLine,
   modelLoadingLine,
   scoreLine,
   scoreModelLine,
@@ -21,8 +22,10 @@ describe("screen language", () => {
     expect(langFromSearch("?lang=jp")).toBe("en");
     expect(langFromSearch("?lang=ja")).toBe("ja");
     expect(langFromSearch("?x=1&lang=ja")).toBe("ja");
-    expect(copyFor("en").simulatedBanner).toBe("Simulated. No money moves.");
-    expect(copyFor("ja").simulatedBanner).toBe("模擬・お金は動かない");
+    expect(copyFor("en").simulatedBanner).toBe(
+      "Simulated. No money moves. Capture needs a recorded yes and a company-exemplar match.",
+    );
+    expect(copyFor("ja").simulatedBanner).toBe("模擬です。お金は動きません。確定には、記録された yes と会社の見本との一致が要ります。");
     expect(copyFor("en").title).toBe("Place a hold. Pay only for what arrived.");
     expect(copyFor("ja").title).toBe("与信する。届いた分だけ支払う。");
     expect(copyFor("ja").play).not.toBe(copyFor("en").play);
@@ -31,10 +34,19 @@ describe("screen language", () => {
     expect(copyFor("en").levels.map((level) => level.label)).toEqual(["Supervised", "Supervised under a limit", "Automatic"]);
     expect(copyFor("ja").levels.map((level) => level.label)).toEqual(["Supervised", "Supervised under a limit", "Automatic"]);
     expect(copyFor("en").truthPlay).toBe("Play");
+    expect(copyFor("en").heroTitle).toBe("Pay only for what arrived.");
+    expect(copyFor("ja").heroTitle).toBe("届いた分だけ払う。");
+    expect(copyFor("ja").heroLine).not.toBe(copyFor("en").heroLine);
     expect(scoreModelLine("en", { phase: "ready" })).toContain("embedding");
     expect(scoreModelLine("ja", { phase: "ready" })).toContain("埋め込み");
     expect(scoreModelLine("ja", { phase: "download", ratio: 0.4 })).toContain("40%");
     expect(scoreModelLine("en", { phase: "failed" })).toContain("did not load");
+    expect(scoreModelLine("en", { phase: "failed" })).toContain("will not capture");
+    expect(scoreModelLine("ja", { phase: "failed" })).toContain("確定しません");
+    expect(copyFor("en").scamRule).toContain("Judged by a rule");
+    expect(copyFor("ja").scamRule).toContain("規則による判定");
+    expect(embeddingFloorLine("en")).toContain("Qwen3 is not loaded");
+    expect(embeddingFloorLine("ja")).toContain("Qwen3");
     expect(modelLoadingLine("en", 0.42)).toBe("AI model loading: 42%");
     expect(modelLoadingLine("ja", 0.42)).toBe("AIモデルを読み込んでいます: 42%");
     expect(modelLoadingLine("en", 0)).toBe("AI model loading: 0%");

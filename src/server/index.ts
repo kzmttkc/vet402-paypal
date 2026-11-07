@@ -2,7 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { serve } from "@hono/node-server";
-import { beginModelLoad } from "../verify/warmup.js";
+import { bootLanguageModel } from "../verify/warmup.js";
 import { createApp } from "./app.js";
 
 const MIME: Record<string, string> = {
@@ -40,11 +40,9 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("PORT must be an integer from 1 to 65535");
 }
 
-const app = createApp();
+bootLanguageModel();
 
-void beginModelLoad().catch(() => {
-  console.error("language model did not load");
-});
+const app = createApp();
 
 app.get("*", async (c) => {
   const path = c.req.path;

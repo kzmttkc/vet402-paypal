@@ -1,6 +1,6 @@
 # vet402 × PayPal
 
-PayPal's agentic commerce describes supervised and automatic shopping. An agent also buys digital deliveries: data, an answer from an API, a report. This work applies the same supervised and automatic idea to those digital deliveries, and captures only after the check.
+An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). In the Play demo, the agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released.
 
 Pay per truth: one hold on the job, then capture only the records that passed and release the rest.
 Scam my agent: a browser page where a judge sends a fake delivery and sees the outcome, the reason, and $0.00 when it fails.
@@ -12,11 +12,11 @@ The seller line on the approval card is counted from 13,893 settled purchases in
 
 ## Two minutes
 
-The public demo URL is TBD as of 2026-11-07. Nothing in this repository is a hosted demo. The mock screen moves no money.
+The public demo is https://kzmttkc.github.io/vet402-paypal/ . The mock screen moves no money.
 
 | Do this | It shows |
 |---|---|
-| Public demo | TBD |
+| Public demo | https://kzmttkc.github.io/vet402-paypal/ |
 | `npm install && npm run dev`, then open http://127.0.0.1:5173 | the hold screen, in English. The banner says this session is on the mock rail and no money moves. `?lang=ja` switches the screen to Japanese. Amounts and ids stay as they are. |
 | **Play** | Pay per truth. Each record lands PASS or FAIL, the captured amount counts up, and the released amount climbs with it. The first passing record reads CAPTURED. While Qwen3 is downloading, the screen says `AI model loading: n%`. |
 | Type or speak a job, pick a budget and Supervised / Supervised under a limit / Automatic, then **Show the plan** | what is being bought, how many, the price, and the seller's track record in one line. **Continue to approval** opens the sheet. With no `PAYPAL_CLIENT_ID` the sheet says the approval is simulated. |
@@ -27,7 +27,9 @@ The public demo URL is TBD as of 2026-11-07. Nothing in this repository is a hos
 
 `npm test` needs no key and no network. `npm run dev` serves the API on port 8787 and the screen on port 5173. Leave `PAYPAL_ENV` unset and the screen stays on the mock.
 
-On 2026-11-07, Playwright's headless Chromium opened the static page (`npm run build:static`, then `npm run screens:static`) at 375px wide, clicked **Play**, and read the first `CAPTURED`. The clock started when navigation started. It took **0.58s**. The target is under 10 seconds. That run does not launch the Google Chrome app.
+The static page starts loading the embedding model when the page opens. If that load has finished when **Play** is pressed, the page judges immediately. If it has not, the page says `AI model loading: n%` and then judges. If the model does not load, the page does not stamp CAPTURED.
+
+`npm run screens:static` opens the static page at 375px in a headless browser, presses **Play** right away, and checks that the first status is `CAPTURED`.
 
 ## May it pay?
 
@@ -44,7 +46,7 @@ day total + amount ≤ dailyCap      month total + amount ≤ monthlyCap
 
 At capture time, expiry, revocation, the authorization's own expiry, and the stop switch are checked again, and the ledger chain is verified.
 
-Autonomy, named after PayPal's supervised and automatic modes: **Supervised** (a person approves every job), **Supervised under a limit** (automatic up to a threshold), **Automatic** (automatic within budget and caps). The threshold, autonomy, caps, seller list, and expiry can only be tightened. The internal ids stay `careful`, `balanced`, and `autopilot`.
+Autonomy, named after PayPal's supervised and automatic scenarios: **Supervised** (a person approves every job), **Supervised under a limit** (automatic up to a threshold), **Automatic** (automatic within budget and caps). The threshold, autonomy, caps, seller list, and expiry can only be tightened. The internal ids stay `careful`, `balanced`, and `autopilot`.
 
 Amounts are integer cents computed by code from the job plan. The judge's output has no amount field. The scorer returns one number in [0, 1], or nothing.
 
@@ -53,7 +55,7 @@ Amounts are integer cents computed by code from the job plan. The judge's output
 | What goes wrong | What happens |
 |---|---|
 | Over budget, seller not allowed, mandate expired or revoked, over a cap | refused before any PayPal call, written to the ledger |
-| Same request retried | the same `PayPal-Request-Id` returns the first result. Nothing is charged twice. |
+| Same request retried | the same `PayPal-Request-Id` returns the latest status of the first request. Nothing is charged twice. |
 | Seller returns 4xx / 5xx after payment | void |
 | 200 with an empty body, `{}`, `[]`, `null`, or no records | void |
 | Wrong shape, wrong types, impossible values, bad formats | void |
@@ -90,10 +92,10 @@ The x402 column follows the auth-capture page at <https://docs.x402r.org/x402-in
 |---|---|
 | Facilitator submits the client's signature. `AuthCaptureEscrow.authorize` locks tokens in the escrow contract. | `POST /v2/checkout/orders` with `intent=AUTHORIZE`, then `POST /v2/checkout/orders/{id}/authorize`. PayPal places the hold. |
 | The server returns the resource. | The seller's body is judged against the condition fixed before the hold. |
-| `captureAuthorizer` calls `capture`. Tokens move to the receiver. | `POST /v2/payments/authorizations/{id}/capture` for the sum that passed, with `final_capture=true`. PayPal releases the rest. |
+| `captureAuthorizer` calls `capture`. Tokens move to the receiver. | `POST /v2/payments/authorizations/{id}/capture` for the sum that passed, with `final_capture=true`. That closes the authorization. |
 | `void` returns the escrowed tokens to the client. | `POST /v2/payments/authorizations/{id}/void`. |
 | After capture, `refund` inside `refundDeadline`. | `POST /v2/payments/captures/{id}/refund`. |
-| After `captureDeadline`, the client calls `reclaim` on the contract. | Not built. PayPal expires the authorization on its own clock. A sandbox read-back includes `expiration_time`. |
+| After `captureDeadline`, the client calls `reclaim` on the contract. | No call needed. PayPal expires the authorization on its own clock. A sandbox read-back includes `expiration_time`. |
 
 `autoCapture: true` on that page charges immediately and has no void step. This program does not use that path. Every order it creates has `intent=AUTHORIZE`.
 
@@ -105,7 +107,11 @@ The x402 column follows the auth-capture page at <https://docs.x402r.org/x402-in
 
 False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 25/248 (10.1%). Empty bodies, injected text, an instruction inside a declared field, and a shape-valid delivery whose names are not companies have no column in the export, so each of those types is a fixed 12. Detail: [EVAL.md](EVAL.md).
 
-`SCORER=transformers npm run eval` (`onnx-community/Qwen3-0.6B-ONNX`, q4f16, no token, no `ANTHROPIC_API_KEY`) printed that same 248-case line. Qwen3 voided all 12 off-topic deliveries. One warm CPU score of a single name took 417 ms. The static page does not download this model (about 570MB). It scores with the MiniLM embedding and says so. That embedding floor captures a shape-valid delivery even when the names are not companies, so it does not print this line.
+The 12 off-topic names in that run are `OFF_TOPIC_NAMES`: names Qwen3 had already answered "no" to. Voiding all 12 is that list. The stand-in answers "no" when the question quotes one of them, so `false_approvals=0` is not a held-out score.
+
+On 60 other names, 30 companies and 30 that are not, Qwen3 alone was right on 49 (81.7%) on 2026-11-07. A yes is no longer enough. The name also has to be nearer a fixed list of company-name exemplars than the calibration phrase "Iron Nail" (all-MiniLM-L6-v2). One check alone leaves the score at 0.75, and a person decides. Both no scores 0.15 and voids. On those 60, using the recorded Qwen3 answers and that exemplar check: 0 names that are not companies were captured, 14 of 30 companies were captured (46.7%), and 25 of 60 went to a person (41.7%). The line was not chosen from these 60. Detail: [EVAL.md](EVAL.md) and [docs/held-out-qwen3-2026-11-07.json](docs/held-out-qwen3-2026-11-07.json).
+
+`SCORER=transformers npm run eval` (`onnx-community/Qwen3-0.6B-ONNX`, q4f16, no token, no `ANTHROPIC_API_KEY`) prints the same 248-case line, because those 12 names are the list above. One warm CPU score of a single name took 417 ms. The static page does not download this model (about 570MB). It uses the recorded Qwen3 answers plus the MiniLM exemplar check, and captures only when both agree. `npm run eval` also prints 12 pre-registered paraphrased instructions, one line each.
 
 ## Sandbox record
 
@@ -120,7 +126,7 @@ False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 25/2
 | gate 2 | A vaulted card (payment token `7p2918019c535510e`, Visa, last digits 1881) authorizes and captures $25.00 with the buyer away. Passed. A saved PayPal balance still needs the buyer once: setup token `7JL562195V043941L` is `PAYER_ACTION_REQUIRED`. |
 | buyer approval | Order `92J5084030716252J` is `PAYER_ACTION_REQUIRED` and `approved: false`. |
 
-`npm run sandbox:run` writes that file. It reads `PAYPAL_ENV=sandbox`, `PAYPAL_CLIENT_ID`, and `PAYPAL_CLIENT_SECRET` from `.env` (gitignored; this repository does not contain them). The code talks only to `api-m.sandbox.paypal.com`. Any other host, or `PAYPAL_ENV` set to anything other than `sandbox` or `mock`, is refused.
+`npm run sandbox:run` writes that file. It reads `PAYPAL_ENV=sandbox`, `PAYPAL_CLIENT_ID`, and `PAYPAL_CLIENT_SECRET` from `.env`. `.env` is gitignored. This repository does not contain those values. The code talks only to `api-m.sandbox.paypal.com`. Any other host, or `PAYPAL_ENV` set to anything other than `sandbox` or `mock`, is refused.
 
 `npm run dev` with `PAYPAL_ENV=sandbox` uses the same screen. **Activity** lists the sandbox ids. `npm run demo:sandbox` captures one honest delivery and voids an empty one. `npm run test:sandbox` is the live sandbox test file.
 
@@ -137,7 +143,7 @@ False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 25/2
 | `emergency_stop` | Voids every open authorization. |
 | `get_activity` | Ledger lines: order, authorization, capture, void, hash. |
 
-The first score downloads `onnx-community/Qwen3-0.6B-ONNX` (q4f16, about 570MB) into `.cache/transformers` from the public Hugging Face repo. No hub token is sent. Set `ANTHROPIC_API_KEY` only if Claude should draft the plan or replace that score (`claude-sonnet-4-5`, unless `ANTHROPIC_MODEL` is set). The key is not printed. Prices stay computed in code. The eval in [EVAL.md](EVAL.md) did not call Claude.
+The first score downloads `onnx-community/Qwen3-0.6B-ONNX` (q4f16, about 570MB) into `.cache/transformers` from the public Hugging Face repo. No hub token is sent. Set `ANTHROPIC_API_KEY` only if Claude should draft the plan or replace that score (`claude-sonnet-5-5`, unless `ANTHROPIC_MODEL` is set). The key is not printed. Prices stay computed in code. The eval in [EVAL.md](EVAL.md) did not call Claude.
 
 Claude Desktop, in `claude_desktop_config.json`:
 
@@ -154,6 +160,18 @@ Claude Desktop, in `claude_desktop_config.json`:
 ```
 
 Restart Claude Desktop after saving. Ask it to plan a job, then place the hold only after the person agrees (`confirm: true`).
+
+## Deploy on Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kzmttkc/vet402-paypal)
+
+The button opens `render.yaml` in Render.
+
+`render.yaml` is a Node 20 web service. The build command is `npm install && npm run build`. The start command is `npm start`. The process reads `PORT`.
+
+`SCORER=embedding` is set in that file. Boot then does not download Qwen3 (about 570MB). The server scores with the embedding floor, and the screen says so. Remove `SCORER` to load Qwen3 instead. PayPal secrets stay in the Render dashboard, not in this repository. Set `PAYPAL_ENV=sandbox`, `PAYPAL_CLIENT_ID`, and `PAYPAL_CLIENT_SECRET` there if the service should talk to the sandbox. Leave `PAYPAL_ENV` unset and it stays on the mock.
+
+`render.yaml` is the one-click deploy setting for the server version on Render's free plan. The public demo at https://kzmttkc.github.io/vet402-paypal/ is the static page.
 
 ## Other commands
 

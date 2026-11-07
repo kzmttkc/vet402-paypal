@@ -1,8 +1,9 @@
 import { COMPANY_RECORDS } from "../../eval/condition.js";
 import { scoreModelLine, type PageScorePhase } from "../../src/i18n/copy.js";
 import { fixCondition } from "../../src/verify/condition.js";
-import { completenessScorer, type Scorer } from "../../src/verify/judge.js";
-import { embeddingDetail } from "../../src/verify/score.js";
+import { embeddingCompanyShape } from "../../src/verify/company-shape.js";
+import type { Scorer } from "../../src/verify/judge.js";
+import { scorePageDelivery } from "../../src/verify/page-score.js";
 
 type Progress = { status?: string; loaded?: number; total?: number };
 type Extractor = (text: string, opts: { pooling: string; normalize: boolean }) => Promise<{ data?: ArrayLike<number> }>;
@@ -33,6 +34,14 @@ export function pageScoreLine(lang: "en" | "ja"): string {
   return scoreModelLine(lang, phase);
 }
 
+/**
+ * The embedding model did not load. A filled-in body used to score as 1 and
+ * stamp CAPTURED. This page has not scored anything, so it does not capture.
+ */
+export function scoreWhenModelMissing(): number {
+  return 0;
+}
+
 /** Starts the embedding download once. Safe to call again. */
 export function startPageScorer(): Promise<Scorer> {
   if (!loading) loading = loadEmbeddingScorer();
@@ -55,17 +64,15 @@ async function loadEmbeddingScorer(): Promise<Scorer> {
     });
     publish({ phase: "ready" });
     const cond = fixCondition(COMPANY_RECORDS);
-    const detail = embeddingDetail(cond, async (text) => {
+    const embed = async (text: string) => {
       const out = await extractor(text, { pooling: "mean", normalize: true });
       if (!out.data || out.data.length === 0) throw new Error("embedding model returned no vector");
       return out.data;
-    });
-    return async (input) => (await detail(input)).score;
+    };
+    const shape = (name: string) => embeddingCompanyShape(name, embed);
+    return async (input) => scorePageDelivery(cond.spec, input.data, shape);
   } catch {
     publish({ phase: "failed" });
-    const stringPaths = Object.entries(COMPANY_RECORDS.fields)
-      .filter((entry): entry is [string, "string"] => entry[1] === "string")
-      .map(([path]) => path);
-    return completenessScorer(stringPaths);
+    return async () => scoreWhenModelMissing();
   }
 }

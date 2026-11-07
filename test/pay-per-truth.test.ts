@@ -42,6 +42,15 @@ describe("pay per truth", () => {
     expect(done.rows.at(-1)?.releasedCents).toBe(HOLD - done.capturedCents);
   });
 
+  it("does not mark a pass when the scorer refuses every filled-in record", async () => {
+    const s = setup({ scorer: () => 0 });
+    const done = await settlePayPerTruth(s.engine, s.conditionId, { holdCents: HOLD, count: COUNT, passed: PASSED });
+    expect(done.status).toBe("voided");
+    expect(done.capturedCents).toBe(0);
+    expect(done.rows.some((row) => row.mark === "PASS")).toBe(false);
+    expect(s.rail.effectiveCalls("capture")).toBe(0);
+  });
+
   it("voids the authorization when nothing passes", async () => {
     const s = setup();
     const done = await settlePayPerTruth(s.engine, s.conditionId, { holdCents: HOLD, count: COUNT, passed: 0 });

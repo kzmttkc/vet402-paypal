@@ -1,0 +1,653 @@
+{
+  "n": 60,
+  "companies": 30,
+  "notCompanies": 30,
+  "correct": 49,
+  "accuracy": 0.8166666666666667,
+  "capture": 37,
+  "void": 23,
+  "human": 0,
+  "wrong": [
+    {
+      "text": "Caterpillar",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "No, \"Caterpillar",
+      "answer": "no",
+      "payment": "void",
+      "correct": false
+    },
+    {
+      "text": "Patagonia",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": false
+    },
+    {
+      "text": "Kitchen Sponge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Kitchen Sponge\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Maple Leaf",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Maple Leaf",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Salt Shaker",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Salt Shaker",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Door Hinge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Door Hinge",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Hiking Boot",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Hiking Boot",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "River Pebble",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"River Pebble",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Monday Forecast",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "Yes, \"Monday Forecast\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Miso Ramen",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "Yes, \"Miso Ram",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Wireless Mouse",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "Yes, \"Wireless Mouse",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    }
+  ],
+  "rows": [
+    {
+      "text": "Toyota Motor",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Toyota Motor\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Sony Group",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Sony Group\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Mitsubishi Heavy Industries",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Mitsubishi",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "SoftBank Group",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"SoftBank Group",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Hitachi Ltd",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Hitachi Ltd",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Panasonic Holdings",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Panasonic Holdings",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Nintendo Co",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Nintendo Co\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Honda Motor",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Honda Motor\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Canon Inc",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Canon Inc.\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Fujitsu Limited",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Fujitsu",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Unilever",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Unilever",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Nestle",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Nestle",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Siemens",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Siemens\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Samsung Electronics",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Samsung Electronics\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Hyundai Motor",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Hyundai Motor",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Bosch",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Bosch",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Airbus",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Airbus\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Maersk",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Maersk",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Caterpillar",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "No, \"Caterpillar",
+      "answer": "no",
+      "payment": "void",
+      "correct": false
+    },
+    {
+      "text": "John Deere",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"John Deere",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "FedEx",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"FedEx\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "UPS",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"UPS\" is",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "DHL Express",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"DHL Express",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "IKEA",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"IKEA\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Patagonia",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": false
+    },
+    {
+      "text": "Stripe",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Stripe\" is",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Shopify",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Shopify\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Adobe",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Adobe\" is",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Salesforce",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Salesforce\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "ASML",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"ASML\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Tuesday Sunrise",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Glass of Milk",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Wooden Chair",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Red Bicycle",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Paper Notebook",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Kitchen Sponge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Kitchen Sponge\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Cotton Socks",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Green Tea",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Bus Ticket",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Rain Gauge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Maple Leaf",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Maple Leaf",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Salt Shaker",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Salt Shaker",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Door Hinge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Door Hinge",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Yellow Pencil",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Train Timetable",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Ceramic Bowl",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Hiking Boot",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"Hiking Boot",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Window Curtain",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Garden Hose",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Library Card",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Birthday Cake",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Steel Ruler",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Postage Stamp",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Alarm Clock",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "River Pebble",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes, \"River Pebble",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Wool Scarf",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Desk Lamp",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No.",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Monday Forecast",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "Yes, \"Monday Forecast\"",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Miso Ramen",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "Yes, \"Miso Ram",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Wireless Mouse",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "Yes, \"Wireless Mouse",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    }
+  ]
+}

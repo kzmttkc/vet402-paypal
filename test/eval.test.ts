@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCases } from "../eval/cases.js";
+import { buildCases, OFF_TOPIC_NAMES } from "../eval/cases.js";
+import { HELD_OUT_NAMES } from "../eval/held-out-names.js";
 import { COMPANY_RECORDS } from "../eval/condition.js";
 import { allocate, type CaseType } from "../eval/mix.js";
 import { runEval } from "../eval/run.js";
@@ -26,6 +27,20 @@ describe("eval", () => {
     expect(r.chainOk).toBe(true);
     expect(r.railCaptures).toBe(r.byType.honest!.capture);
   }, 60_000);
+
+  it("keeps the held-out names off the list that picked the 12", () => {
+    const blocked = new Set<string>(OFF_TOPIC_NAMES);
+    const companies = HELD_OUT_NAMES.filter((row) => row.truth === "company");
+    const others = HELD_OUT_NAMES.filter((row) => row.truth === "not_company");
+    expect(companies).toHaveLength(30);
+    expect(others).toHaveLength(30);
+    for (const row of HELD_OUT_NAMES) expect(blocked.has(row.text)).toBe(false);
+    expect(HELD_OUT_NAMES.filter((row) => row.leftOutOfList).map((row) => row.text)).toEqual([
+      "Monday Forecast",
+      "Miso Ramen",
+      "Wireless Mouse",
+    ]);
+  });
 
   it("wrong-content deliveries match the shape and the ranges", () => {
     const zeros = Object.fromEntries(

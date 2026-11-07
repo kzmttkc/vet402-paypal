@@ -18,8 +18,10 @@ describe("job plan", () => {
     let itemProperties: Record<string, unknown> | undefined;
     const fetchImpl = vi.fn(async (_url: unknown, init: RequestInit) => {
       const body = JSON.parse(String(init.body)) as {
+        model: string;
         tools: { input_schema: { properties: { items: { items: { properties: Record<string, unknown> } } } } }[];
       };
+      expect(body.model).toBe("claude-sonnet-5-5");
       itemProperties = body.tools[0]!.input_schema.properties.items.items.properties;
       return new Response(
         JSON.stringify({

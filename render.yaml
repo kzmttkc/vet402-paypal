@@ -2,8 +2,11 @@ services:
   - type: web
     runtime: node
     name: vet402-paypal
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: SCORER
+        value: embedding

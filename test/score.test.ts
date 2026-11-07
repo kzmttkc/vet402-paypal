@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { COMPANY_RECORDS } from "../eval/condition.js";
 import { fixCondition } from "../src/verify/condition.js";
 import { judge } from "../src/verify/judge.js";
-import { isLanguageScore } from "../src/verify/language.js";
+import { isLanguageScore, useLanguageAsk } from "../src/verify/language.js";
 import { embeddingDetail, scorerFromEnv, useEmbedder, type Embedder } from "../src/verify/score.js";
 import { good, goodRecords } from "./helpers.js";
 
@@ -59,12 +59,30 @@ describe("scorer selection", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("uses the embedding floor when SCORER=embedding and does not ask Qwen3", async () => {
+    const seen: string[] = [];
+    useLanguageAsk(async (prompt) => {
+      seen.push(prompt);
+      return "No.";
+    });
+    useEmbedder(sameVector);
+    const fetchImpl = vi.fn();
+    const scorer = scorerFromEnv(cond, { SCORER: "embedding" }, fetchImpl as unknown as typeof fetch);
+    const score = await scorer({ conditionDescription: cond.spec.description, data: { records: goodRecords } });
+    expect(score).toBeGreaterThanOrEqual(cond.spec.ai.passAt);
+    expect(seen).toEqual([]);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    useLanguageAsk(async () => "Yes.");
+  });
+
   it("calls Claude only when a key is set and returns that score", async () => {
     const key = "sk-ant-test-secret-value";
     const fetchImpl = vi.fn(async (_url: unknown, init: RequestInit) => {
       const body = JSON.parse(String(init.body)) as {
+        model: string;
         tools: { input_schema: { required: string[]; additionalProperties: boolean; properties: Record<string, unknown> } }[];
       };
+      expect(body.model).toBe("claude-sonnet-5-5");
       expect(body.tools[0]!.input_schema.additionalProperties).toBe(false);
       expect([...body.tools[0]!.input_schema.required].sort()).toEqual(["reason", "score"]);
       expect(Object.keys(body.tools[0]!.input_schema.properties).sort()).toEqual(["reason", "score"]);

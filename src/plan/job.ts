@@ -173,7 +173,7 @@ export async function planJob(
   let draft = fallback;
   if (key) {
     const fetchImpl = opts.fetch ?? ((url, init) => fetch(url, init));
-    const model = env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-5";
+    const model = env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-5-5";
     try {
       draft = draftFromModel(await claudeDraft(text, key, fetchImpl, model), fallback);
     } catch {

@@ -7,6 +7,7 @@ import {
   companyPrompt,
   contentFieldPaths,
   languageDetail,
+  languageScore,
   parseLanguageScore,
   readYesNo,
   useLanguageAsk,
@@ -74,6 +75,31 @@ describe("local language scorer", () => {
     expect(parseLanguageScore(JSON.stringify(report))).toEqual(report);
     expect(seen).toContain(companyPrompt("Kizuna Logistics"));
     expect(seen.every((prompt) => prompt === companyPrompt("Kizuna Logistics") || prompt === companyPrompt("Northwind Foods"))).toBe(true);
+  });
+
+  it("does not capture when only the language model says yes", async () => {
+    const report = await languageScore(cond.spec, { records: goodRecords }, async () => "Yes.", async () => false);
+    expect(report.score).toBeGreaterThanOrEqual(cond.spec.ai.voidBelow);
+    expect(report.score).toBeLessThan(cond.spec.ai.passAt);
+    const verdict = await judge(cond, good(), () => report);
+    expect(verdict.outcome).toBe("human");
+  });
+
+  it("captures when both checks say yes and voids when both say no", async () => {
+    const agreed = await languageScore(cond.spec, { records: goodRecords }, async () => "Yes.", async () => true);
+    expect(agreed.score).toBeGreaterThanOrEqual(cond.spec.ai.passAt);
+    const refused = await languageScore(cond.spec, weather, async () => "No.", async () => false);
+    expect(refused.score).toBeLessThan(cond.spec.ai.voidBelow);
+    const verdict = await judge(cond, good({ body: JSON.stringify(weather) }), () => refused);
+    expect(verdict.outcome).toBe("void");
+  });
+
+  it("does not void when only the language model says no", async () => {
+    const report = await languageScore(cond.spec, { records: goodRecords }, async () => "No.", async () => true);
+    expect(report.score).toBeGreaterThanOrEqual(cond.spec.ai.voidBelow);
+    expect(report.score).toBeLessThan(cond.spec.ai.passAt);
+    const verdict = await judge(cond, good(), () => report);
+    expect(verdict.outcome).toBe("human");
   });
 
   it("lowers the score when a name is not a company", async () => {

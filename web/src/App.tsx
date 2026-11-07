@@ -8,6 +8,7 @@ import {
   copyFor,
   deliverySentence,
   langFromSearch,
+  embeddingFloorLine,
   modelLoadingLine,
   presentDecision,
   presentError,
@@ -25,6 +26,9 @@ import { pageScoreSource } from "./page-score";
 import { ApprovalSheet, type PaypalButtonConfig } from "./paypal-approval";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
+import { Evidence } from "./stage/evidence";
+import { Hero } from "./stage/hero";
+import { ReplayLog } from "./stage/replay";
 import { api } from "./transport";
 
 type Autonomy = "careful" | "balanced" | "autopilot";
@@ -37,22 +41,6 @@ const BUDGETS: { cents: Budget; label: string }[] = [
   { cents: 10000, label: "$100" },
   { cents: 20000, label: "$200" },
 ];
-
-function PlayIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M5 2.8v10.4L13.2 8 5 2.8z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function StopIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      <rect x="2" y="2" width="10" height="10" fill="currentColor" />
-    </svg>
-  );
-}
 
 function usd(cents: number): string {
   return `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
@@ -75,15 +63,11 @@ function markOf(progress: string): "PASS" | "FAIL" | "UNSURE" | "WAIT" {
 function TruthTape({
   copy,
   busy,
-  stopped,
   run,
-  onPlay,
 }: {
   copy: Copy;
   busy: boolean;
-  stopped: boolean;
   run: TruthResult | null;
-  onPlay: () => void;
 }) {
   const [shown, setShown] = useState(0);
   const [money, setMoney] = useState({ captured: 0, released: 0 });
@@ -131,23 +115,11 @@ function TruthTape({
 
   const rows = run?.rows.slice(0, shown) ?? [];
   const finished = run !== null && shown >= run.rows.length && money.captured === run.capturedCents;
-  const passed = rows.some((row) => row.mark === "PASS");
+  const passed = (run?.capturedCents ?? 0) > 0 && rows.some((row) => row.mark === "PASS");
 
   return (
-    <section data-testid="pay-per-truth" aria-labelledby="page-heading" aria-busy={busy}>
-      <h1 id="page-heading" data-testid="page-heading">
-        {copy.truthHeading}
-      </h1>
-      <button
-        type="button"
-        className="play play-hero"
-        data-testid="pay-per-truth-play"
-        disabled={busy || stopped}
-        onClick={onPlay}
-      >
-        <PlayIcon />
-        {copy.truthPlay}
-      </button>
+    <section data-testid="pay-per-truth" aria-labelledby="truth-heading" aria-busy={busy}>
+      <h2 id="truth-heading">{copy.truthHeading}</h2>
       <p id="truth-lead" className="lead">
         {copy.truthLead}
       </p>
@@ -253,6 +225,7 @@ function ScamBench({
           ))}
         </div>
       </fieldset>
+      {kind === "not_company" && <p data-testid="scam-rule">{copy.scamRule}</p>}
       <label className="block" htmlFor="scam-text">
         {copy.scamNote}
       </label>
@@ -306,8 +279,6 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [lang] = useState<Lang>(() => langFromSearch(window.location.search));
   const copy = copyFor(lang);
   const [lane, setLane] = useState<Lane>("buy");
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [health, setHealth] = useState<Health | null>(simulated ? { ok: true, rail: "mock", stopped: false } : null);
   const [paypal, setPaypal] = useState<PaypalButtonConfig | null>(null);
   const [brief, setBrief] = useState(copy.sampleBrief);
@@ -331,25 +302,12 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [playWaiting, setPlayWaiting] = useState(false);
+  const [replayKey, setReplayKey] = useState(0);
   const [listening, setListening] = useState(false);
   const [scorePhase, setScorePhase] = useState<PageScorePhase | null>(null);
   const speechRef = useRef<SpeechSession | null>(null);
   const canSpeak = speechConstructor(window as unknown as SpeechHost) !== null;
-  const dark = theme === "dark" || (theme === "system" && systemDark);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => setSystemDark(media.matches);
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, []);
-
-  useEffect(() => {
-    if (theme === "system") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.dataset.theme = theme;
-    const color = document.querySelector('meta[name="theme-color"]');
-    color?.setAttribute("content", dark ? "#16130f" : "#f3ecdf");
-  }, [theme, dark]);
 
   useEffect(() => {
     if (!scam?.win) return;
@@ -526,13 +484,18 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   return (
     <>
       {simulated && (
-        <p className="sim-banner" data-testid="sim-banner">
-          {copy.simulatedBanner}
+        <p className="sim-banner" data-testid="sim-banner" data-score-phase={scorePhase?.phase ?? "pending"}>
+          {scorePhase?.phase === "failed" ? scoreModelLine(lang, scorePhase) : copy.simulatedBanner}
         </p>
       )}
-      {simulated && scorePhase && (
-        <p className="score-note" data-testid="score-model">
-          {scoreModelLine(lang, scorePhase)}
+      {simulated && playWaiting && scorePhase?.phase === "download" && (
+        <p className="score-note" data-testid="model-loading">
+          {modelLoadingLine(lang, scorePhase.ratio)}
+        </p>
+      )}
+      {!simulated && health?.model?.phase === "embedding" && (
+        <p className="score-note" data-testid="embedding-floor">
+          {embeddingFloorLine(lang)}
         </p>
       )}
       {!simulated && health?.model?.phase === "download" && (
@@ -540,31 +503,35 @@ export function App({ simulated = false }: { simulated?: boolean }) {
           {modelLoadingLine(lang, health.model.ratio)}
         </p>
       )}
-      <main className="wrap" data-lang={lang} data-theme={dark ? "dark" : "light"}>
-        <div className="toolbar">
-          <p className="rail-note">{health ? railLine : copy.connecting}</p>
-          <button
-            type="button"
-            className="minor"
-            data-testid="theme-toggle"
-            aria-pressed={dark}
-            onClick={() => setTheme(dark ? "light" : "dark")}
-          >
-            {dark ? copy.themeToLight : copy.themeToDark}
-          </button>
+      <main className="desk" data-lang={lang}>
+        <div className="stage">
+          {!simulated && (
+            <div className="toolbar">
+              <p className="rail-note">{health ? railLine : copy.connecting}</p>
+            </div>
+          )}
+          <Hero
+            copy={copy}
+            busy={busy}
+            stopped={health?.stopped === true}
+            result={truth}
+            onPlay={() =>
+              void run(async () => {
+                if (simulated && scorePhase?.phase !== "ready") setPlayWaiting(true);
+                try {
+                  setTruth(await api<TruthResult>("/api/pay-per-truth", {}));
+                } finally {
+                  setPlayWaiting(false);
+                }
+              })
+            }
+            onReplay={() => setReplayKey((key) => key + 1)}
+          />
+          {replayKey > 0 ? <ReplayLog key={replayKey} copy={copy} /> : null}
+          <Evidence copy={copy} />
         </div>
-
-        <TruthTape
-          copy={copy}
-          busy={busy}
-          stopped={health?.stopped === true}
-          run={truth}
-          onPlay={() =>
-            void run(async () => {
-              setTruth(await api<TruthResult>("/api/pay-per-truth", {}));
-            })
-          }
-        />
+        <div className="wrap">
+        <TruthTape copy={copy} busy={busy} run={truth} />
 
         <div className="tabs" role="tablist" aria-label={copy.tabBuy} onKeyDown={onTabsKey}>
           <button type="button" role="tab" id="tab-buy" aria-selected={lane === "buy"} aria-controls="panel-buy" tabIndex={lane === "buy" ? 0 : -1} onClick={() => setLane("buy")}>
@@ -659,7 +626,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
                 <h2 id="plan-title">{copy.approval}</h2>
                 <p className="ask">{shown.brief}</p>
                 <p className="summary" data-testid="plan-count">
-                  {shown.items.length} · {usd(shown.holdCents)}
+                  {shown.countLine}
                 </p>
                 <p className="seller-line" data-testid="approval-seller-line" data-sample={shown.sellerSample ? "true" : "false"}>
                   {shown.sellerLine}
@@ -776,7 +743,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
               <ol className="receipt" data-testid="activity">
                 {activity.map((entry) => (
                   <li key={`${entry.jobId ?? "none"}-${entry.seq}`}>
-                    <p>{activitySentence(lang, entry.type)}</p>
+                    <p>{activitySentence(lang, entry.type, { replay: simulated || health?.rail !== "sandbox", verdict: entry.verdict })}</p>
                     <details>
                       <summary>{copy.details}</summary>
                       <dl className="meta">
@@ -861,6 +828,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
         )}
 
         <p className="escrow">{copy.escrow}</p>
+        </div>
       </main>
       <div className="stopbar">
         <button
@@ -874,7 +842,6 @@ export function App({ simulated = false }: { simulated?: boolean }) {
             })
           }
         >
-          <StopIcon />
           {health?.stopped ? copy.stopped : copy.stop}
         </button>
       </div>

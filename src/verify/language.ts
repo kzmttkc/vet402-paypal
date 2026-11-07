@@ -1,3 +1,4 @@
+import { activeCompanyShape, type CompanyShape } from "./company-shape.js";
 import type { ConditionSpec, FixedCondition } from "./condition.js";
 import { valuesAt } from "./paths.js";
 import { humanBandScore, instructionShape, type ScoreInput } from "./score.js";
@@ -6,6 +7,8 @@ import { humanBandScore, instructionShape, type ScoreInput } from "./score.js";
  * Qwen3-0.6B-Instruct, q4f16 ONNX. Public, no key.
  * A longer prompt that included the request made every answer "yes", including weather.
  * The question below is the one that separated company names from weather and food.
+ * A yes is not enough to capture. The exemplar check has to agree, or the score stays where a person decides.
+ * Both checks saying no is a void. Capture is still the caller's threshold on the score.
  */
 export const LANGUAGE_MODEL_ID = "onnx-community/Qwen3-0.6B-ONNX";
 export const LANGUAGE_DTYPE = "q4f16";
@@ -92,10 +95,16 @@ function unique(values: string[]): string[] {
   return [...new Set(values)];
 }
 
-export async function languageScore(spec: ConditionSpec, data: unknown, ask: LanguageAsk): Promise<LanguageScore> {
+export async function languageScore(
+  spec: ConditionSpec,
+  data: unknown,
+  ask: LanguageAsk,
+  shape: CompanyShape = activeCompanyShape(),
+): Promise<LanguageScore> {
   const suspicious: string[] = [];
   const reasons: string[] = [];
   let mismatch = false;
+  let split = false;
   for (const path of contentFieldPaths(spec)) {
     for (const value of valuesAt(data, path).values) {
       if (typeof value !== "string") continue;
@@ -104,17 +113,26 @@ export async function languageScore(spec: ConditionSpec, data: unknown, ask: Lan
       if (instructionShape(value)) {
         suspicious.push(path);
         reasons.push(`instruction in ${path}`);
-      } else if (answer === "no") {
+        continue;
+      }
+      const form = await shape(value);
+      if (answer === "yes" && form) continue;
+      if (answer === "no" && !form) {
         mismatch = true;
         reasons.push(`${path} is not a company`);
+        continue;
       }
+      split = true;
+      reasons.push(`${path} split the two checks`);
     }
   }
   const built: LanguageScore = suspicious.length > 0
     ? { score: humanBandScore(spec.ai), reasons: unique(reasons), suspicious_fields: unique(suspicious) }
-    : mismatch
-      ? { score: 0.15, reasons: unique(reasons), suspicious_fields: [] }
-      : { score: 0.95, reasons: ["company names match the request"], suspicious_fields: [] };
+    : split
+      ? { score: humanBandScore(spec.ai), reasons: unique(reasons), suspicious_fields: [] }
+      : mismatch
+        ? { score: 0.15, reasons: unique(reasons), suspicious_fields: [] }
+        : { score: 0.95, reasons: ["company names match the request"], suspicious_fields: [] };
   return parseLanguageScore(JSON.stringify(built));
 }
 

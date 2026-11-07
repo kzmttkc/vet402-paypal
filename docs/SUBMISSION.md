@@ -1,19 +1,8 @@
-# Devpost draft
-
-Paste the sections below into the PayPal AI Hackathon form. Rules checked on 2026-11-07 at <https://paypalaihackathon.devpost.com/rules>.
-
-| Rule | Where it is answered |
-|---|---|
-| Public repository, OSS license visible in About | `LICENSE` is MIT at the repository root. GitHub shows it in About once the repository is public. This draft does not publish the repository. |
-| Text description | Project story below |
-| A judge can run it | [Testing instructions](#testing-instructions). The mock needs no key. A hosted demo is not required. The public demo URL is TBD. |
-| Tools | [Tools](#tools) |
-| Demonstration video, under 3 minutes, on YouTube, in English | [Video](#video). The YouTube link is TBD. The script is [VIDEO.md](VIDEO.md). |
-| English | This file, the README, EVAL.md, and the video script are in English. |
-
 ## Inspiration
 
-The frozen vet402 export (fetched 2026-11-07) has 13,893 settled purchases. 1,826 of them (13.1%) came back as a paid 4xx (736), a paid 5xx (121), a shape mismatch (728), or a 2xx later than 15 seconds (241). Capturing at the moment the agent buys would pay for those. I wanted the hold to stay in place until the body passed a condition that was already fixed.
+An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). This agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released. Those 1,826 are a paid 4xx (736), a paid 5xx (121), a shape mismatch that was not also late (728), or a 2xx later than 15 seconds (241).
+
+Built during the hackathon: the PayPal authorize, partial capture, void, and vault path, and the judge that decides them. The vet402 export it counts is existing public data.
 
 ## What it does
 
@@ -29,7 +18,11 @@ The rail is PayPal Orders v2 and Payments v2 with `intent=AUTHORIZE`: create the
 
 The seller line and the eval mix read `data/observatory_export.csv` (22,071 rows, sha256 `c0fea21a1b476ec853588f1215da174d29cfe0d823ad0877719fe75cbb232169`). The loader refuses the file if the hash changes. Amounts are integer cents from the job plan. The judge cannot name an amount.
 
-The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a plan or replaces that score only when `ANTHROPIC_API_KEY` is set. The published eval did not call Claude. The static page is too small for the 570MB weights, so it scores with all-MiniLM-L6-v2 and says so.
+The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a plan or replaces that score only when `ANTHROPIC_API_KEY` is set. The published eval did not call Claude. The static page is too small for the 570MB weights. It uses the recorded Qwen3 answers plus all-MiniLM-L6-v2, and captures only when both agree. It says so.
+
+AG Grid is the list where a person decides: each held delivery is a row, and Capture or Void settles that PayPal authorization.
+
+`render.yaml` is the one-click deploy setting for the server version on Render's free plan (Deploy to Render button in the README). It sets `SCORER=embedding`, so starting the service does not download Qwen3.
 
 `npm run mcp` exposes plan, hold, check, settle, and stop on the mock. Hold and settle refuse unless `confirm` is true.
 
@@ -37,13 +30,13 @@ The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a p
 
 The export has no column for an empty 200, for injected text, for an instruction sitting in a field the condition did ask for, or for a shape-valid delivery whose names are not companies. Those four types are a fixed 12 each in the eval, not a measured share. The mix itself is the share of 5,958 settled rows: 4,132 with `l2_schema=match`, 728 with `l2_schema=mismatch`, 736 paid 4xx, 121 paid 5xx, and 241 paid 2xx later than 15 seconds. The other 7,935 of the 13,893 settled rows fall outside those five buckets: the paid status is not three digits, or a 2xx is not late and `l2_schema` is neither `match` nor `mismatch`. I did not split that 7,935 any further. The bodies in the eval are generated. [EVAL.md](../EVAL.md) spells that out.
 
-Structural checks decide most failures before the score runs. Twelve shape-valid deliveries about weather and food are in the 248. Qwen3 voided all 12. The embedding floor would have captured them. MiniLM is not the scorer that printed this table.
+Structural checks decide most failures before the score runs. Twelve shape-valid deliveries in the 248 use names Qwen3 had already answered "no" to, so voiding those 12 is that list. On 60 names that were not used to build the list (30 companies and 30 that are not), Qwen3 alone was right on 49 of 60. A capture now needs that yes and a second check: the name has to be nearer a fixed list of company exemplars than the calibration phrase Iron Nail. On the recorded answers, 0 of the 30 that are not companies were captured, 14 of 30 companies were captured, and 25 of 60 went to a person. Monday Forecast, Miso Ramen, and Wireless Mouse are three of the nine that a yes alone would have captured. They now go to a person. Both checks saying no still voids. The 248-case line comes from the eval's fixed stand-in, not a model. The model numbers are the 60 above. Detail is [EVAL.md](../EVAL.md).
 
 A capture smaller than the authorization, and a vaulted card while the buyer is away, had to be read back from the sandbox rather than trusted from the response I had just sent. A saved PayPal balance still stops at `PAYER_ACTION_REQUIRED`. I left that order unapproved.
 
 ## Accomplishments
 
-`npm run eval` on 2026-11-07: 248 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.1% sent to a person (25/248). Ledger chain ok. Injected text outside a declared field flipped no verdict. Qwen3 voided the 12 off-topic deliveries. One warm CPU score of a single name took 417 ms.
+`npm run eval` on 2026-11-07: 248 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.1% sent to a person (25/248). Ledger chain ok. Injected text outside a declared field flipped no verdict. That 0 is the stand-in for the 12 names already answered "no". On the 60 held-out names, both checks captured 14 of 30 companies and 0 of the 30 that are not. 25 of 60 went to a person. Qwen3 alone had been right on 49, and a yes alone would have captured 9 non-companies. One warm CPU score of a single name took 417 ms.
 
 Sandbox run `run-20261107034254` (2026-11-07T03:42:54.620Z to 2026-11-07T03:43:41.883Z, `api-m.sandbox.paypal.com`). Every id below was read back with GET. Detail is `docs/sandbox-run.json`.
 
@@ -59,7 +52,7 @@ x402 auth-capture, on the page I read on 2026-11-07, locks tokens in `AuthCaptur
 
 ## What's next
 
-The public demo URL is TBD. The YouTube link is TBD. I have not pointed this screen at a live PayPal account. The sandbox rail remains the path that moves a test charge. The mock remains the path with no key.
+The public demo is https://kzmttkc.github.io/vet402-paypal/ . The sandbox rail moves the test charges, and the mock needs no key.
 
 ## Built with
 
@@ -76,7 +69,7 @@ AI used, and what it did:
 | Grok | I used Grok inside Cursor to run the eval, read the Devpost rules, and draft EVAL.md, the README, this text, and the video script. |
 | Qwen3-0.6B | The default score. The ONNX build `onnx-community/Qwen3-0.6B-ONNX` (q4f16, about 570MB) is downloaded from huggingface.co. No key. |
 | all-MiniLM-L6-v2 | The static page's score, because Qwen3 is too large for that page. The ONNX build `onnx-community/all-MiniLM-L6-v2-ONNX` is downloaded from huggingface.co. No key. |
-| Claude (optional) | If `ANTHROPIC_API_KEY` is set, `claude-sonnet-4-5` (or `ANTHROPIC_MODEL`) drafts the job plan or replaces the local score. Amounts stay in code. The published eval did not call Claude. |
+| Claude (optional) | If `ANTHROPIC_API_KEY` is set, `claude-sonnet-5-5` (or `ANTHROPIC_MODEL`) drafts the job plan or replaces the local score. Amounts stay in code. The published eval did not call Claude. |
 
 ## Testing instructions
 
@@ -90,7 +83,7 @@ No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.
 4. Open http://127.0.0.1:5173
 5. **Play.** Records land PASS or FAIL. The captured amount counts up. The first pass reads CAPTURED. If Qwen3 is still downloading, the screen says `AI model loading: n%`. When the download finishes, the same process scores with Qwen3. No restart.
 6. **Show the plan.** The seller line is counted from the frozen export. The levels read Supervised, Supervised under a limit, and Automatic. **Continue to approval**. With no `PAYPAL_CLIENT_ID` the sheet says the approval is simulated.
-7. **Approve the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**. Each part has a verdict and one sentence. **Activity** says what happened; ids are under Details.
+7. **Approve the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**. Each part has a verdict and one sentence. **Activity** says what happened. The ids are under Details.
 8. **Void every open hold.** Open authorizations void.
 9. Optional: `npm run eval`. The summary line should match [EVAL.md](../EVAL.md): 248 cases and `false_approvals=0`. It does not download a model.
 
@@ -118,4 +111,4 @@ MIT. File: `LICENSE` at the repository root. That is the license GitHub shows in
 
 ## Video
 
-Not uploaded. The YouTube link is TBD. The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser, plus one terminal line.
+(YouTube link added at submission). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.

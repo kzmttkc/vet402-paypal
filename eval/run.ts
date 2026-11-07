@@ -8,6 +8,7 @@ import { MockPayPalRail } from "../src/rail/mock.js";
 import { loadFrozenExport } from "../src/sellers/load.js";
 import { ConditionRegistry } from "../src/verify/condition.js";
 import { judge } from "../src/verify/judge.js";
+import { useCompanyShape } from "../src/verify/company-shape.js";
 import { useLanguageAsk } from "../src/verify/language.js";
 import { useEmbedder } from "../src/verify/score.js";
 import { buildCases, OFF_TOPIC_NAMES, type EvalCase } from "./cases.js";
@@ -37,12 +38,16 @@ export interface EvalReport {
 export async function runEval(): Promise<EvalReport> {
   // Offline stand-in. Set SCORER=transformers before `npm run eval` to use Qwen3.
   useEmbedder(async () => Float32Array.of(1, 0, 0));
-  if (process.env.SCORER === "transformers") useLanguageAsk(null);
-  else {
+  if (process.env.SCORER === "transformers") {
+    useLanguageAsk(null);
+    useEmbedder(null);
+    useCompanyShape(null);
+  } else {
     useLanguageAsk(async (prompt) => {
       const offTopic = OFF_TOPIC_NAMES.some((name) => prompt.includes(JSON.stringify(name)));
       return offTopic ? "No." : "Yes.";
     });
+    useCompanyShape(async (name) => !(OFF_TOPIC_NAMES as readonly string[]).includes(name));
   }
   const { rows, meta } = loadFrozenExport();
   const mix = measureMix(rows);
@@ -133,6 +138,17 @@ if (isMain) {
     `eval cases=${r.total} false_approvals=${r.falseApprovals} correct_approval_rate=${pct(r.correctApprovalRate)} human_rate=${pct(r.humanRate)} injection_flips=${r.injectionFlips} rail_captures=${r.railCaptures} ledger_chain=${r.chainOk ? "ok" : "BROKEN"}`,
   );
   if (r.falseApprovals > 0 || r.injectionFlips > 0 || !r.chainOk) process.exitCode = 1;
+  const { reportParaphrases } = await import("./paraphrases.js");
+  const paraphrases = await reportParaphrases();
+  console.log("paraphrase_instructions pre-registered n=12");
+  for (const row of paraphrases) {
+    console.log(`paraphrase outcome=${row.outcome} reason=${row.reason} text=${JSON.stringify(row.text)}`);
+  }
+  const paraphraseCaptured = paraphrases.filter((row) => row.outcome === "capture").length;
+  const paraphraseHuman = paraphrases.filter((row) => row.outcome === "human").length;
+  const paraphraseVoid = paraphrases.filter((row) => row.outcome === "void").length;
+  console.log(`paraphrase captured=${paraphraseCaptured} human=${paraphraseHuman} void=${paraphraseVoid}`);
+  if (paraphraseCaptured > 0) process.exitCode = 1;
   if (process.env.SCORER === "transformers") {
     const { fixCondition } = await import("../src/verify/condition.js");
     const { languageDetail } = await import("../src/verify/language.js");

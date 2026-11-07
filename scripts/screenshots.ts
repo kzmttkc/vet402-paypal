@@ -29,9 +29,17 @@ const browser = await chromium.launch({
   headless: true,
   ...(process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {}),
 });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, colorScheme: "dark" });
 const started = Date.now();
 await page.goto(base, { waitUntil: "domcontentloaded" });
+await page.getByTestId("hero").waitFor();
+const motion = await page.evaluate(() => {
+  const paint = performance.getEntriesByType("paint").find((entry) => entry.name === "first-contentful-paint" || entry.name === "first-paint");
+  return paint?.startTime ?? performance.now();
+});
+if (motion > 1000) throw new Error(`first motion ${motion.toFixed(0)}ms`);
+console.log(`first motion ${(motion / 1000).toFixed(2)}s`);
+await page.screenshot({ path: `${out}/live-hero.png`, animations: "disabled" });
 await page.getByTestId("pay-per-truth-play").click();
 await page.getByTestId("first-captured").waitFor();
 const word = (await page.getByTestId("first-captured").innerText()).trim();
@@ -53,6 +61,7 @@ await page.getByRole("tab", { name: "Scam my agent" }).click();
 await page.getByTestId("scam-bench").screenshot({ path: `${out}/scam-my-agent.png`, animations: "disabled" });
 
 await browser.close();
+console.log(`${out}/live-hero.png`);
 console.log(`${out}/pay-per-truth.png`);
 console.log(`${out}/approval-card.png`);
 console.log(`${out}/scam-my-agent.png`);

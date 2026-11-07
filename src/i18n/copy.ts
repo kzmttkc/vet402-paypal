@@ -4,7 +4,7 @@ import { formatUsd } from "../policy/money.js";
 export type Lang = "en" | "ja";
 
 /** Japanese static-page banner. The English screen uses Copy.simulatedBanner. */
-export const SIMULATED_BANNER = "模擬・お金は動かない";
+export const SIMULATED_BANNER = "模擬です。お金は動きません。確定には、記録された yes と会社の見本との一致が要ります。";
 
 export function langFromSearch(search: string): Lang {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
@@ -28,6 +28,34 @@ export interface Copy {
   truthHeading: string;
   truthLead: string;
   truthPlay: string;
+  heroTitle: string;
+  heroLine: string;
+  replayButton: string;
+  replayNote: string;
+  replayClock: string;
+  replayStart: string;
+  replayFull: string;
+  replayPartial: string;
+  replayVoid: string;
+  replayRefund: string;
+  replayAway: string;
+  replayEnd: string;
+  evidenceFigure: string;
+  evidenceHeading: string;
+  evidenceSettled: string;
+  evidenceBroken: string;
+  clip4xx: string;
+  clip5xx: string;
+  clipShape: string;
+  clipLate: string;
+  diagramHeading: string;
+  diagramAsk: string;
+  diagramHold: string;
+  diagramInspect: string;
+  diagramRule: string;
+  diagramAi: string;
+  diagramCapture: string;
+  diagramRelease: string;
   truthCaptured: string;
   truthReleased: string;
   scamHeading: string;
@@ -42,6 +70,7 @@ export interface Copy {
   scamRange: string;
   scamInstruction: string;
   scamName: string;
+  scamRule: string;
   scamLate: string;
   honest: string;
   empty: string;
@@ -132,7 +161,7 @@ const EN: Copy = {
   lang: "en",
   htmlLang: "en",
   speechLang: "en-US",
-  simulatedBanner: "Simulated. No money moves.",
+  simulatedBanner: "Simulated. No money moves. Capture needs a recorded yes and a company-exemplar match.",
   documentTitle: "Hold, then capture what passed",
   title: "Place a hold. Pay only for what arrived.",
   lead: "The agent buys company records. PayPal holds the budget. Each delivery is checked against a condition fixed before the hold. Capture keeps what passed. The rest is released.",
@@ -145,6 +174,34 @@ const EN: Copy = {
   truthHeading: "Pay per truth",
   truthLead: "One hold of $50.00 for 50 company records. Each record is judged. Capture keeps the ones that passed, and releases the rest.",
   truthPlay: "Play",
+  heroTitle: "Pay only for what arrived.",
+  heroLine: "of 13,893 settled purchases were broken. Frozen on 2026-11-07.",
+  replayButton: "Replay Nov 7",
+  replayNote: "Recorded replay of the sandbox run. This page does not call PayPal.",
+  replayClock: "The file stored only the start and the finish. Steps play in the order they were written.",
+  replayStart: "Run started",
+  replayFull: "Authorize $20.00, then capture $20.00",
+  replayPartial: "Gate 1. Authorize $50.00, then capture $12.50",
+  replayVoid: "Authorize $30.00, void it, and the later capture is refused",
+  replayRefund: "Authorize $15.00, capture $15.00, then refund $15.00",
+  replayAway: "Gate 2. The buyer is away. A saved Visa captures $25.00",
+  replayEnd: "Run finished",
+  evidenceFigure: "Figure 1.",
+  evidenceHeading: "What the frozen export already paid for",
+  evidenceSettled: "settled purchases in the export frozen on 2026-11-07.",
+  evidenceBroken: "of them were a paid error, a missed shape, or a late 2xx.",
+  clip4xx: "settled purchases came back paid 4xx",
+  clip5xx: "settled purchases came back paid 5xx",
+  clipShape: "were on time, then missed the promised shape",
+  clipLate: "arrived after 15 seconds and were still paid",
+  diagramHeading: "Ask, hold, check, then keep what passed",
+  diagramAsk: "Ask",
+  diagramHold: "Hold on PayPal",
+  diagramInspect: "Inspect what arrived",
+  diagramRule: "Rule",
+  diagramAi: "AI",
+  diagramCapture: "Capture what passed",
+  diagramRelease: "Release the rest",
   truthCaptured: "Captured",
   truthReleased: "Released",
   scamHeading: "Scam my agent",
@@ -159,6 +216,7 @@ const EN: Copy = {
   scamRange: "Out of range",
   scamInstruction: "Instruction in a field",
   scamName: "Not a company",
+  scamRule: "Judged by a rule. The prepared name is on a fixed list, so no model is asked.",
   scamLate: "Late",
   honest: "Honest delivery",
   empty: "Empty delivery",
@@ -257,6 +315,34 @@ const JA: Copy = {
   truthHeading: "正しかった分だけ払う",
   truthLead: "会社の記録50件に、与信は1回です。1件ずつ判定し、合格した分だけ確定して、残りは解放します。",
   truthPlay: "再生",
+  heroTitle: "届いた分だけ払う。",
+  heroLine: "決済済み 13,893 件のうち、壊れた応答です。2026-11-07 に凍結した書き出し。",
+  replayButton: "11月7日を再生",
+  replayNote: "記録したサンドボックス実行の再生です。この画面は PayPal を呼びません。",
+  replayClock: "ファイルに残っている時刻は開始と終了だけです。手順は書かれた順に再生します。",
+  replayStart: "実行を開始",
+  replayFull: "$20.00 を与信し、$20.00 を確定",
+  replayPartial: "ゲート1。$50.00 を与信し、$12.50 を確定",
+  replayVoid: "$30.00 を与信して取り消し、その後の確定は拒否",
+  replayRefund: "$15.00 を与信し、$15.00 を確定し、$15.00 を返金",
+  replayAway: "ゲート2。買い手は不在。保存した Visa で $25.00 を確定",
+  replayEnd: "実行が終了",
+  evidenceFigure: "図 1.",
+  evidenceHeading: "凍結した書き出しが、すでに払っていたもの",
+  evidenceSettled: "件が、2026-11-07 に凍結した書き出しの決済済みです。",
+  evidenceBroken: "件は、支払ったあとのエラーか、形の不一致か、遅い 2xx です。",
+  clip4xx: "件は、支払ったあとの 4xx",
+  clip5xx: "件は、支払ったあとの 5xx",
+  clipShape: "件は時間に間に合い、約束した形ではなかった",
+  clipLate: "件は 15 秒を超えて届き、それでも支払われていた",
+  diagramHeading: "頼んで、押さえて、検査して、合格分を確定する",
+  diagramAsk: "頼む",
+  diagramHold: "PayPal で押さえる",
+  diagramInspect: "届いた物を検査",
+  diagramRule: "規則",
+  diagramAi: "AI",
+  diagramCapture: "合格分を確定",
+  diagramRelease: "残りを解放",
   truthCaptured: "確定",
   truthReleased: "解放",
   scamHeading: "エージェントを騙す",
@@ -271,6 +357,7 @@ const JA: Copy = {
   scamRange: "範囲の外",
   scamInstruction: "欄の中の指示文",
   scamName: "会社名ではない",
+  scamRule: "規則による判定です。用意した名前は固定の一覧にあり、モデルには聞きません。",
   scamLate: "遅い",
   honest: "正直な納品",
   empty: "空の納品",
@@ -360,6 +447,11 @@ export function copyFor(lang: Lang): Copy {
 }
 
 /** Shown while the server is still fetching Qwen3. Japanese only when the screen language is Japanese. */
+export function embeddingFloorLine(lang: Lang): string {
+  if (lang === "ja") return "このサーバーは埋め込みの下限で採点しています。Qwen3 は読み込んでいません。";
+  return "This server scores with the embedding floor. Qwen3 is not loaded.";
+}
+
 export function modelLoadingLine(lang: Lang, ratio: number): string {
   const pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
   if (lang === "ja") return `AIモデルを読み込んでいます: ${pct}%`;
@@ -379,13 +471,13 @@ export type PageScorePhase = { phase: "download"; ratio: number } | { phase: "re
 export function scoreModelLine(lang: Lang, state: PageScorePhase): string {
   if (state.phase === "ready") {
     return lang === "ja"
-      ? "言語モデルは約 570MB あるため、このページは埋め込みの近さで採点しています。"
-      : "The language model is about 570MB, so this page scores by embedding similarity.";
+      ? "Qwen3 は約 570MB で、このページには載せていません。確定には、記録された yes と見本への埋め込みの近さが両方要ります。"
+      : "Qwen3 is about 570MB and is not loaded here. Capture needs a recorded yes and embedding similarity to the company exemplars.";
   }
   if (state.phase === "failed") {
     return lang === "ja"
-      ? "言語モデルは重すぎ、埋め込みモデルも読めなかったため、欄が埋まっているかだけで採点しています。"
-      : "The language model is too heavy, and the embedding model did not load. This page only checks that the text fields are filled in.";
+      ? "埋め込みモデルを読み込めませんでした。モデルでは採点していないので、このページは確定しません。"
+      : "The embedding model did not load. Nothing was scored by a model, so this page will not capture.";
   }
   const pct = Math.round(Math.max(0, Math.min(1, state.ratio)) * 100);
   return lang === "ja"
@@ -474,6 +566,7 @@ export interface ShownJob {
   sellerLine: string;
   holdQuestion: string;
   holdReason?: string;
+  countLine?: string;
   condition: { description: string };
   items: { label: string; progress: string; price: string }[];
 }
@@ -512,7 +605,15 @@ export function screenJob<T extends ShownJob>(job: T, lang: Lang): T {
     })),
   };
   if (typeof job.holdReason === "string") next.holdReason = presentHoldReason(lang, job.holdReason);
+  if (typeof job.countLine === "string") next.countLine = presentCountLine(lang, job.countLine);
   return next;
+}
+
+function presentCountLine(lang: Lang, line: string): string {
+  if (lang === "en") return line;
+  const match = /^(\d+) records · (\$[\d.]+) each · (\$[\d.]+) hold$/.exec(line);
+  if (!match) return line;
+  return `${match[1]} 件 · 1件 ${match[2]} · 与信 ${match[3]}`;
 }
 
 const ERRORS: Record<string, string> = {
@@ -567,7 +668,12 @@ export function reasonSentence(lang: Lang, reason: string): string {
 }
 
 /** One plain sentence for a scam result. Ids stay out of this sentence. */
-export function scamSentence(lang: Lang, result: { outcome: string; reason: string; amount: string }): string {
+export function scamSentence(lang: Lang, result: { outcome: string; reason: string; amount: string; basis?: "rule" | "scorer" | null }): string {
+  if (result.basis === "rule" && result.outcome !== "capture") {
+    return lang === "ja"
+      ? "確定しませんでした。規則による判定です。この名前は固定の一覧にあり、モデルには聞いていません。"
+      : "Nothing was captured. Judged by a rule. This name is on a fixed list, so no model was asked.";
+  }
   if (result.outcome === "capture") {
     return lang === "ja" ? `これは通りました。確定は ${result.amount} です。` : `This one got through. Captured ${result.amount}.`;
   }
@@ -591,7 +697,7 @@ export function deliverySentence(lang: Lang, progress: string): string {
   return lang === "ja" ? "まだ届いていません。" : "This part has not arrived yet.";
 }
 
-export function activitySentence(lang: Lang, type: string): string {
+export function activitySentence(lang: Lang, type: string, opts?: { replay?: boolean; verdict?: string | null }): string {
   const en: Record<string, string> = {
     authorize: "PayPal placed a hold. Nothing is captured until the delivery is checked.",
     capture: "PayPal captured the part that passed and released the rest.",
@@ -613,5 +719,12 @@ export function activitySentence(lang: Lang, type: string): string {
     stop: "開いている与信を、すべて解放しました。",
   };
   const table = lang === "ja" ? ja : en;
-  return table[type] ?? (lang === "ja" ? "この仕事に、PayPal の記録が一行増えました。" : "PayPal recorded another step on this job.");
+  const captured = type === "capture" || (opts?.replay === true && type === "human" && opts.verdict === "capture");
+  const line = table[captured ? "capture" : type] ?? (lang === "ja" ? "この仕事に、PayPal の記録が一行増えました。" : "PayPal recorded another step on this job.");
+  if (opts?.replay === true && captured) {
+    return lang === "ja"
+      ? `${line} これは記録の再生です。この画面は PayPal を呼びません。`
+      : `${line} Recorded replay. This page does not call PayPal.`;
+  }
+  return line;
 }

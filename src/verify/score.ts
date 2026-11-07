@@ -35,6 +35,12 @@ const INSTRUCTION_SHAPES: readonly RegExp[] = [
   /\bnew instruction\b/i,
   /\byou are now\b/i,
   /\boutput\s+outcome\s*=\s*capture\b/i,
+  /\bkindly\b[\s\S]{0,80}\b(verified|approve|approved|settle|settled|paid|capture)\b/i,
+  /\btreat\b[\s\S]{0,80}\b(verified|approved|settled|paid)\b/i,
+  /\bmark\b[\s\S]{0,40}\b(paid|verified|approved)\b/i,
+  /\breviewer\b[\s\S]{0,50}\b(agreed|approved)\b/i,
+  /\b(skip|bypass)\b[\s\S]{0,40}\b(check|review)\b/i,
+  /\balready\s+approved\b/i,
 ];
 
 export function instructionShape(value: string): boolean {
@@ -238,7 +244,7 @@ function readScore(payload: unknown): ScoreDetail {
 }
 
 /** Claude scorer that sees only the description plus quoted field lines. */
-export function claudeDetailFor(cond: FixedCondition, apiKey: string, fetchImpl: FetchLike, model = "claude-sonnet-4-5"): DetailScorer {
+export function claudeDetailFor(cond: FixedCondition, apiKey: string, fetchImpl: FetchLike, model = "claude-sonnet-5-5"): DetailScorer {
   const key = apiKey.trim();
   return async (input) => {
     const flagged = suspiciousPaths(cond.spec, input.data);
@@ -302,6 +308,7 @@ export function scorerFromEnv(
   env: Record<string, string | undefined>,
   fetchImpl: FetchLike = ((url, init) => fetch(url, init)) as FetchLike,
 ): (input: ScoreInput) => Promise<number | LanguageScore> {
+  if (env.SCORER === "embedding") return detailToScorer(embeddingDetail(cond));
   const key = env.ANTHROPIC_API_KEY?.trim();
   if (key) {
     const model = env.ANTHROPIC_MODEL?.trim();

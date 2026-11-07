@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { activitySentence } from "../src/i18n/copy.js";
 import { createApp, paypalButtonConfig } from "../src/server/app.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
 import { approvalSentence, pickSellerFor, aggregateSellers, loadFrozenExport } from "../src/sellers/index.js";
@@ -41,6 +42,9 @@ describe("job API, no network", () => {
     expect(planned.json.sellerLine).toMatch(/^\d+ paid purchases, \d+\.\d% matched the promised shape, \d+\.\d% errors after payment$/);
     expect(planned.json.conditionId).toMatch(/^cond_[0-9a-f]{64}$/);
     expect(planned.json.holdQuestion).toBe("May I place a hold of $50.00 until each delivery checks out?");
+    expect(planned.json.holdReason).toBe("Established seller: one hold for the whole job");
+    expect(planned.json.countLine).toBe("50 records · $1.00 each · $50.00 hold");
+    expect(String(planned.json.holdReason).startsWith("Established")).toBe(true);
     expect(planned.json.status).toBe("planned");
     expect(planned.json.orderId).toBeNull();
 
@@ -93,6 +97,26 @@ describe("job API, no network", () => {
     const review = await get(a, "/api/review");
     const rows = review.json.rows as { jobId: string; kind: string }[];
     expect(rows.some((r) => r.jobId === jobId && r.kind === "live")).toBe(true);
+  });
+
+  it("writes PayPal captured when a live hold row is captured, and the mock calls it a replay", async () => {
+    const a = app();
+    const planned = await post(a, "/api/jobs", brief);
+    const jobId = planned.json.jobId as string;
+    await post(a, `/api/jobs/${jobId}/approve`);
+    await post(a, `/api/jobs/${jobId}/settle`, { mode: "unsure" });
+    const review = await get(a, "/api/review");
+    const rows = review.json.rows as { jobId: string; itemId: string; kind: string; decision: string }[];
+    const live = rows.find((row) => row.jobId === jobId && row.kind === "live" && row.decision === "open");
+    expect(live).toBeTruthy();
+    const decided = await post(a, `/api/review/${live!.jobId}/${live!.itemId}`, { decision: "capture" });
+    expect(decided.status).toBe(200);
+    const act = await get(a, "/api/activity");
+    const entries = act.json.entries as { type: string; verdict: string | null }[];
+    expect(entries.some((entry) => entry.type === "human" && entry.verdict === "capture")).toBe(true);
+    const line = activitySentence("en", "human", { replay: true, verdict: "capture" });
+    expect(line.startsWith("PayPal captured")).toBe(true);
+    expect(line).toContain("Recorded replay. This page does not call PayPal.");
   });
 
   it("emergency stop voids every open authorization", async () => {

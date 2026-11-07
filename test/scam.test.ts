@@ -23,6 +23,35 @@ describe("scam my agent", () => {
     expect(done.reason).toBe("suspicious_field");
   });
 
+  it("voids a listed name by rule and does not ask the fallback scorer", async () => {
+    let calls = 0;
+    const s = setup({
+      scorer: scamScorer(async () => {
+        calls += 1;
+        return 0.95;
+      }),
+    });
+    const done = await judgeScam(s.engine, s.conditionId, "not_company");
+    expect(calls).toBe(0);
+    expect(done.basis).toBe("rule");
+    expect(done.outcome).toBe("void");
+    expect(done.capturedCents).toBe(0);
+  });
+
+  it("asks the fallback scorer for a name that is not on the list", async () => {
+    let calls = 0;
+    const s = setup({
+      scorer: scamScorer(async () => {
+        calls += 1;
+        return 0.95;
+      }),
+    });
+    const done = await judgeScam(s.engine, s.conditionId, "not_company", "Monday Forecast");
+    expect(calls).toBeGreaterThan(0);
+    expect(done.basis).toBe("scorer");
+    expect(done.status).toBe("captured");
+  });
+
   it("records a scam the agent captured, in a shape the eval can take", async () => {
     const wins: ScamWin[] = [];
     const s = setup({ scorer: () => 0.95 });

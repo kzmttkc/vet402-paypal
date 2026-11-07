@@ -1,20 +1,20 @@
-export interface PlanItem {
+export type PlanItem = {
   itemId: string;
   label: string;
   priceCents: number;
   price: string;
   progress: string;
-}
+};
 
-export interface ConditionView {
+export type ConditionView = {
   description: string;
   shape: Record<string, string>;
   ranges: Record<string, { min?: number; max?: number }>;
   formats: Record<string, string>;
   score: { passAt: number; voidBelow: number };
-}
+};
 
-export interface JobView {
+export type JobView = {
   jobId: string;
   brief: string;
   autonomy: "careful" | "balanced" | "autopilot";
@@ -26,6 +26,7 @@ export interface JobView {
   capturedCents: number;
   holdQuestion: string;
   holdReason: string;
+  countLine: string;
   summary: string;
   orderId: string | null;
   authorizationId: string | null;
@@ -33,9 +34,9 @@ export interface JobView {
   conditionId: string;
   condition: ConditionView;
   items: PlanItem[];
-}
+};
 
-export interface ReviewRow {
+export type ReviewRow = {
   jobId: string;
   itemId: string;
   sellerId: string;
@@ -44,9 +45,9 @@ export interface ReviewRow {
   conditionId: string;
   kind: "sample" | "live";
   decision: "open" | "capture" | "void";
-}
+};
 
-export interface ActivityEntry {
+export type ActivityEntry = {
   seq: number;
   ts: number;
   jobId: string | null;
@@ -57,11 +58,11 @@ export interface ActivityEntry {
   refundId: string | null;
   verdict: string | null;
   hash: string;
-}
+};
 
-export interface Health {
+export type Health = {
   ok: boolean;
   rail: "mock" | "sandbox";
   stopped: boolean;
-  model?: { phase: "download" | "ready" | "failed"; ratio: number };
-}
+  model?: { phase: "download" | "ready" | "failed" | "embedding"; ratio: number };
+};

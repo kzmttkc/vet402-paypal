@@ -38,6 +38,11 @@ export interface ScamResult {
   capturedCents: number;
   amount: string;
   win: ScamWin | null;
+  /**
+   * "rule" means the name was on the fixed list and no model was asked.
+   * "scorer" means the page's scorer was asked. Null for the other scam kinds.
+   */
+  basis: "rule" | "scorer" | null;
 }
 
 const HOLD_CENTS = 100;
@@ -48,13 +53,22 @@ export function isScamKind(value: unknown): value is ScamKind {
   return typeof value === "string" && (SCAM_KINDS as readonly string[]).includes(value);
 }
 
-/** Off-topic names Qwen3 rejected stay a void, even when the fallback scorer would pass them. */
+const BLOCKED_NAMES = new Set<string>(OFF_TOPIC_NAMES);
+
+/** True when a declared name is on the fixed list. That path does not call a model. */
+export function rejectedByNameList(data: unknown): boolean {
+  const names = valuesAt(data, "records[].name").values.filter((value): value is string => typeof value === "string");
+  return names.some((name) => BLOCKED_NAMES.has(name));
+}
+
+/**
+ * Names on the fixed list are voided by a rule. The fallback scorer is not asked.
+ * A typed name that is not on the list goes to that scorer.
+ */
 export function scamScorer(fallback: Scorer): Scorer {
-  const blocked = new Set<string>(OFF_TOPIC_NAMES);
   return async (input) => {
-    const names = valuesAt(input.data, "records[].name").values.filter((value): value is string => typeof value === "string");
-    if (names.some((name) => blocked.has(name))) {
-      return languageScore(COMPANY_RECORDS, input.data, async () => "No.");
+    if (rejectedByNameList(input.data)) {
+      return languageScore(COMPANY_RECORDS, input.data, async () => "No.", async () => false);
     }
     return fallback(input);
   };
@@ -141,6 +155,17 @@ export async function judgeScam(
     : null;
   if (win) onWin?.(win);
 
+  let basis: ScamResult["basis"] = null;
+  if (kind === "not_company") {
+    let data: unknown = null;
+    try {
+      data = JSON.parse(delivery.body);
+    } catch {
+      data = null;
+    }
+    basis = rejectedByNameList(data) ? "rule" : "scorer";
+  }
+
   return {
     kind,
     outcome: outcomeOf(result.status),
@@ -150,5 +175,6 @@ export async function judgeScam(
     capturedCents: result.capturedCents,
     amount: formatUsd(result.capturedCents),
     win,
+    basis,
   };
 }

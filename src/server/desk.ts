@@ -48,6 +48,7 @@ export interface JobView {
   releasedCents: number;
   holdQuestion: string;
   holdReason: string;
+  countLine: string;
   summary: string;
   orderId: string | null;
   authorizationId: string | null;
@@ -114,6 +115,14 @@ interface Planned {
   credit: CreditPlan;
   approver: string;
   engine: PaymentEngine | null;
+}
+
+function countLine(items: { priceCents: number }[], holdCents: number): string {
+  const first = items[0];
+  if (first && items.every((item) => item.priceCents === first.priceCents)) {
+    return `${items.length} records · ${formatUsd(first.priceCents)} each · ${formatUsd(holdCents)} hold`;
+  }
+  return `${items.length} · ${formatUsd(holdCents)}`;
 }
 
 function splitBudget(cents: number): { itemId: string; label: string; priceCents: number }[] {
@@ -215,8 +224,15 @@ export class Desk {
     const choice = pickSellerFor(this.sellers, jobKindFromBrief(input.brief));
     const seller = input.seller === "new" ? this.newSeller() : choice.seller;
     const sellerSample = input.seller === "new" ? false : choice.sample;
-    const records = input.seller === "new" ? pricedRecords(input.budgetCents, 25) : splitBudget(input.budgetCents);
-    const credit = creditPlan(seller, records.length);
+    const dollarCount = input.budgetCents % 100 === 0 ? input.budgetCents / 100 : 0;
+    const records = input.seller === "new"
+      ? pricedRecords(input.budgetCents, 25)
+      : input.seller === "established" && dollarCount >= 1
+        ? pricedRecords(input.budgetCents, dollarCount)
+        : splitBudget(input.budgetCents);
+    const credit = input.seller === "established"
+      ? { partSize: records.length, parts: 1, reason: "Established seller: one hold for the whole job" }
+      : creditPlan(seller, records.length);
     const items = credit.parts === 1 ? records : partLines(records, credit.partSize);
     const job = this.finishPlan({
       jobId: `job_${randomUUID()}`,
@@ -228,6 +244,7 @@ export class Desk {
       seller,
       sellerSample,
     });
+    job.credit = credit;
     this.jobs.set(job.jobId, job);
     return this.view(job);
   }
@@ -603,6 +620,7 @@ export class Desk {
       releasedCents: status === "captured" ? job.budgetCents - captured : status === "voided" ? job.budgetCents : 0,
       holdQuestion: `May I place a hold of ${formatUsd(job.budgetCents)} until each delivery checks out?`,
       holdReason: job.credit.reason,
+      countLine: countLine(job.items, job.budgetCents),
       summary: summaryOf(status, job.budgetCents, captured),
       orderId: last?.orderId ?? null,
       authorizationId: last?.authorizationId ?? null,

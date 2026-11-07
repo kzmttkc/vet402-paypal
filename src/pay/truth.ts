@@ -115,16 +115,18 @@ export async function settlePayPerTruth(
   if (result.status === "pending_human") result = await engine.approveJob(jobId, "buyer");
   if (result.status === "authorized") result = await engine.settle(jobId, deliveries);
 
+  const snap = engine.job(jobId);
+  const outcomes = snap?.outcomes ?? {};
+  const capturedForReal = result.status === "captured" && result.capturedCents > 0;
   let capturedRunning = 0;
   let releasedRunning = 0;
   const rows: TruthRow[] = items.map((item, i) => {
-    const mark = i < passed ? "PASS" : "FAIL";
+    const mark = capturedForReal && outcomes[item.itemId] === "capture" ? "PASS" : "FAIL";
     if (mark === "PASS") capturedRunning += item.priceCents;
     else releasedRunning += item.priceCents;
     return { itemId: item.itemId, name: names[i]!, mark, capturedCents: capturedRunning, releasedCents: releasedRunning };
   });
 
-  const snap = engine.job(jobId);
   const capturedCents = result.capturedCents;
   return {
     jobId,
