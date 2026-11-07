@@ -7,7 +7,7 @@ import { PolicyStore, type Autonomy } from "../policy/mandate.js";
 import type { PayPalRail } from "../rail/types.js";
 import { aggregateSellers, approvalSentence, loadFrozenExport, pickSeller, type SellerStats } from "../sellers/index.js";
 import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
-import type { Outcome } from "../verify/judge.js";
+import { type Outcome, type Scorer } from "../verify/judge.js";
 import { deliveryFor, type DeliveryMode } from "./deliveries.js";
 
 const DAY = 86_400_000;
@@ -158,10 +158,13 @@ export class Desk {
   private readonly samples: Sample[];
   private stopped = false;
 
-  constructor(opts: { rail: PayPalRail; now?: () => number; sellers?: ReadonlyMap<string, SellerStats> }) {
+  private readonly scorer: Scorer | undefined;
+
+  constructor(opts: { rail: PayPalRail; now?: () => number; sellers?: ReadonlyMap<string, SellerStats>; scorer?: Scorer }) {
     this.rail = opts.rail;
     this.railName = opts.rail.name === "paypal-sandbox" ? "sandbox" : "mock";
     this.now = opts.now ?? (() => Date.now());
+    this.scorer = opts.scorer;
     const sellers = opts.sellers ?? aggregateSellers(loadFrozenExport().rows);
     this.seller = pickSeller(sellers);
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
@@ -209,6 +212,7 @@ export class Desk {
       conditions: this.conditions,
       now: this.now,
       ledger: new Ledger(this.now),
+      scorer: this.scorer,
     });
     job.engine = engine;
     let result = await engine.requestJob({

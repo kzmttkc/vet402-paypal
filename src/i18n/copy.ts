@@ -3,6 +3,9 @@ import { formatUsd } from "../policy/money.js";
 /** Screen language. Amounts and ids are not translated. */
 export type Lang = "en" | "ja";
 
+/** Shown on the static page in both languages. Money does not move. */
+export const SIMULATED_BANNER = "模擬・お金は動かない";
+
 export function langFromSearch(search: string): Lang {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   return params.get("lang") === "ja" ? "ja" : "en";

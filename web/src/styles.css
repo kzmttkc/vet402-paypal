@@ -27,6 +27,20 @@ body {
   color: var(--ink);
 }
 
+.sim-banner {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--ink);
+  color: var(--sheet);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
 ::selection {
   background: #e4c99a;
   color: var(--ink);

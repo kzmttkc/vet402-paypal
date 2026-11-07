@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, screenJob, type Copy, type Lang } from "../../src/i18n/copy.js";
+import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, screenJob, type Copy, type Lang } from "../../src/i18n/copy.js";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
+import { api } from "./transport";
 
 type Autonomy = "careful" | "balanced" | "autopilot";
 type Budget = 2000 | 5000 | 10000 | 20000;
@@ -14,17 +15,6 @@ const BUDGETS: { cents: Budget; label: string }[] = [
   { cents: 10000, label: "$100" },
   { cents: 20000, label: "$200" },
 ];
-
-async function api<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method: body === undefined ? "GET" : "POST",
-    headers: body === undefined ? undefined : { "content-type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new Error(data.error ?? "The request failed.");
-  return data;
-}
 
 function PlayIcon() {
   return (
@@ -207,10 +197,10 @@ function ActionCell(props: ICellRendererParams<ReviewRow, unknown, { onDecide: (
   );
 }
 
-export function App() {
+export function App({ simulated = false }: { simulated?: boolean }) {
   const [lang] = useState<Lang>(() => langFromSearch(window.location.search));
   const copy = copyFor(lang);
-  const [health, setHealth] = useState<Health | null>(null);
+  const [health, setHealth] = useState<Health | null>(simulated ? { ok: true, rail: "mock", stopped: false } : null);
   const [brief, setBrief] = useState(copy.sampleBrief);
   const [budget, setBudget] = useState<Budget>(5000);
   const [autonomy, setAutonomy] = useState<Autonomy>("careful");
@@ -324,6 +314,11 @@ export function App() {
 
   return (
     <>
+      {simulated && (
+        <p className="sim-banner" data-testid="sim-banner">
+          {SIMULATED_BANNER}
+        </p>
+      )}
       <main className="wrap" data-lang={lang}>
         <h1 data-testid="page-heading">{copy.title}</h1>
         <p className="lead">{copy.lead}</p>
