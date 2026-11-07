@@ -114,7 +114,7 @@ Amounts are integer cents computed by code from the job plan. The judge's output
 
 ## Eval
 
-`eval/` builds deliveries in the mix of failure types seen on settled purchases in that export (honest, wrong shape, 4xx and 5xx after payment, late), plus fixed sets of empty 200s and injected instructions, which the export has no column for. Each case runs through policy → mock PayPal → judge → ledger. Reported: false approvals, approval rate for correct deliveries, share sent to a person, and whether injected text changed any verdict.
+`eval/` builds deliveries in the mix of failure types seen on settled purchases in that export (honest, wrong shape, 4xx and 5xx after payment, late), plus fixed sets of empty 200s, injected instructions, and a well-formed delivery whose declared field contains an instruction. The export has no column for those. Each case runs through policy → mock PayPal → judge → ledger. Reported: false approvals, approval rate for correct deliveries, share sent to a person, and whether injected text outside a declared field changed any verdict. An instruction inside a declared field is not captured.
 
 ## Not escrow
 

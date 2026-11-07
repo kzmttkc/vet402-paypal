@@ -4,7 +4,7 @@ import type { ExportRow } from "../src/sellers/aggregate.js";
 export const LATE_MS = 15_000;
 
 export const MEASURED_TYPES = ["honest", "shape", "paid_4xx", "paid_5xx", "late"] as const;
-export const FIXED_TYPES = ["empty_200", "injection"] as const;
+export const FIXED_TYPES = ["empty_200", "injection", "instruction_in_field"] as const;
 export type CaseType = (typeof MEASURED_TYPES)[number] | (typeof FIXED_TYPES)[number];
 
 /**
@@ -15,7 +15,8 @@ export type CaseType = (typeof MEASURED_TYPES)[number] | (typeof FIXED_TYPES)[nu
  *   shape     2xx and l2_schema = mismatch
  *   honest    2xx and l2_schema = match
  * Rows with no declared shape (no_declaration / not_checked) have no ground truth and are left out.
- * The export has no column for empty bodies or injected text; those two types are added at fixed counts.
+ * The export has no column for empty bodies, injected text, or an instruction hidden in a valid field.
+ * Those types are added at fixed counts.
  */
 export function measureMix(rows: readonly ExportRow[]): Record<(typeof MEASURED_TYPES)[number], number> {
   const mix = { honest: 0, shape: 0, paid_4xx: 0, paid_5xx: 0, late: 0 };

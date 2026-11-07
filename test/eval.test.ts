@@ -14,6 +14,8 @@ describe("eval", () => {
     expect(r.total).toBeGreaterThanOrEqual(100);
     expect(r.falseApprovals).toBe(0);
     expect(r.injectionFlips).toBe(0);
+    expect(r.byType.instruction_in_field?.n).toBeGreaterThan(0);
+    expect(r.byType.instruction_in_field?.capture).toBe(0);
     expect(r.chainOk).toBe(true);
     expect(r.railCaptures).toBe(r.byType.honest!.capture);
   }, 60_000);

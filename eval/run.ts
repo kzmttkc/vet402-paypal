@@ -115,10 +115,10 @@ const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].split
 if (isMain) {
   const r = await runEval();
   const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
-  console.log(`export sha256=${r.exportSha256.slice(0, 12)} settled mix ${MEASURED_TYPES.map((k) => `${k}=${r.mix[k]}`).join(" ")} (+ empty_200, injection at ${FIXED_PER_TYPE} each: not in export)`);
-  console.log("type        n  capture  void  human");
+  console.log(`export sha256=${r.exportSha256.slice(0, 12)} settled mix ${MEASURED_TYPES.map((k) => `${k}=${r.mix[k]}`).join(" ")} (+ ${FIXED_TYPES.join(", ")} at ${FIXED_PER_TYPE} each: not in export)`);
+  console.log("type                    n  capture  void  human");
   for (const [k, b] of Object.entries(r.byType)) {
-    console.log(`${k.padEnd(10)} ${String(b.n).padStart(3)}  ${String(b.capture).padStart(7)}  ${String(b.void).padStart(4)}  ${String(b.human).padStart(5)}`);
+    console.log(`${k.padEnd(22)} ${String(b.n).padStart(3)}  ${String(b.capture).padStart(7)}  ${String(b.void).padStart(4)}  ${String(b.human).padStart(5)}`);
   }
   if (r.misapproved.length) console.log(`misapproved: ${r.misapproved.join(", ")}`);
   console.log(
