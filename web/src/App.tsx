@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { TruthResult } from "../../src/pay/truth.js";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
@@ -35,6 +36,99 @@ function StopIcon() {
 
 function usd(cents: number): string {
   return `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
+}
+
+function TruthTape({
+  copy,
+  busy,
+  stopped,
+  run,
+  onPlay,
+}: {
+  copy: Copy;
+  busy: boolean;
+  stopped: boolean;
+  run: TruthResult | null;
+  onPlay: () => void;
+}) {
+  const [shown, setShown] = useState(0);
+  const listRef = useRef<HTMLOListElement | null>(null);
+
+  useEffect(() => {
+    if (!run) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setShown(run.rows.length);
+      return;
+    }
+    setShown(0);
+    const id = window.setInterval(() => {
+      setShown((n) => {
+        if (n >= run.rows.length) {
+          window.clearInterval(id);
+          return n;
+        }
+        return n + 1;
+      });
+    }, 45);
+    return () => window.clearInterval(id);
+  }, [run]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    list.scrollTop = list.scrollHeight;
+  }, [shown]);
+
+  const rows = run?.rows.slice(0, shown) ?? [];
+  const last = rows.at(-1);
+  const finished = run !== null && shown >= run.rows.length;
+  const captured = last?.capturedCents ?? 0;
+  const released = last?.releasedCents ?? 0;
+
+  return (
+    <section data-testid="pay-per-truth" aria-labelledby="truth-title">
+      <h2 id="truth-title">{copy.truthHeading}</h2>
+      <p>{copy.truthLead}</p>
+      <button
+        type="button"
+        className="play"
+        data-testid="pay-per-truth-play"
+        disabled={busy || stopped}
+        onClick={onPlay}
+      >
+        <PlayIcon />
+        {copy.truthPlay}
+      </button>
+      {run && (
+        <>
+          <div className="meters">
+            <p className="meter">
+              <span>{copy.truthCaptured}</span>
+              <strong data-testid="pay-per-truth-captured">{usd(captured)}</strong>
+            </p>
+            <p className="meter">
+              <span>{copy.truthReleased}</span>
+              <strong data-testid="pay-per-truth-released">{usd(released)}</strong>
+            </p>
+          </div>
+          <ol className="tape" ref={listRef} data-testid="pay-per-truth-tape">
+            {rows.map((row) => (
+              <li key={row.itemId}>
+                <span>{row.name}</span>
+                <span className={row.mark === "PASS" ? "mark-pass" : "mark-fail"}>{row.mark}</span>
+              </li>
+            ))}
+          </ol>
+          {finished && (
+            <p className="summary" data-testid="pay-per-truth-line">
+              {run.line}
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
 }
 
 function stampClass(status: string): string {
@@ -207,6 +301,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [autonomy, setAutonomy] = useState<Autonomy>("careful");
   const [job, setJob] = useState<JobView | null>(null);
   const [demo, setDemo] = useState<{ left: JobView; right: JobView } | null>(null);
+  const [truth, setTruth] = useState<TruthResult | null>(null);
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [chains, setChains] = useState<{ jobId: string; headHash: string }[]>([]);
@@ -335,6 +430,18 @@ export function App({ simulated = false }: { simulated?: boolean }) {
         <h1 data-testid="page-heading">{copy.title}</h1>
         <p className="lead">{copy.lead}</p>
         <p className="rail-note">{health ? railLine : copy.connecting}</p>
+
+        <TruthTape
+          copy={copy}
+          busy={busy}
+          stopped={health?.stopped === true}
+          run={truth}
+          onPlay={() =>
+            void run(async () => {
+              setTruth(await api<TruthResult>("/api/pay-per-truth", {}));
+            })
+          }
+        />
 
         <h2>{copy.demoHeading}</h2>
         <p>{copy.demoLead}</p>

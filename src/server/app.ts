@@ -75,6 +75,8 @@ export function createApp(opts: AppOptions = {}): Hono {
     return c.json(await desk.settle(c.req.param("jobId"), body.mode as DeliveryMode));
   });
 
+  app.post("/api/pay-per-truth", async (c) => c.json(await desk.payPerTruth()));
+
   app.post("/api/demo", async (c) => {
     const body = await readJson(c);
     const budget = isRecord(body) && body.budgetCents !== undefined ? body.budgetCents : 5_000;

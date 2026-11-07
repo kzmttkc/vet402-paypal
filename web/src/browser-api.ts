@@ -53,6 +53,8 @@ async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknow
   const one = /^\/api\/jobs\/([^/]+)$/.exec(path);
   if (one && body === undefined) return desk.job(decodeURIComponent(one[1] ?? ""));
 
+  if (path === "/api/pay-per-truth" && body !== undefined) return desk.payPerTruth();
+
   if (path === "/api/demo" && body !== undefined) {
     const budget = isRecord(body) && body.budgetCents !== undefined ? body.budgetCents : 5_000;
     if (typeof budget !== "number" || !Number.isInteger(budget) || budget < 2_000 || budget > 20_000) {

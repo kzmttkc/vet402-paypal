@@ -24,6 +24,11 @@ export interface Copy {
   demoHeading: string;
   demoLead: string;
   play: string;
+  truthHeading: string;
+  truthLead: string;
+  truthPlay: string;
+  truthCaptured: string;
+  truthReleased: string;
   honest: string;
   empty: string;
   askHeading: string;
@@ -103,6 +108,11 @@ const EN: Copy = {
   demoHeading: "Same job, two deliveries",
   demoLead: "One click. The left side delivers the records. The right side delivers nothing.",
   play: "Play the same job both ways",
+  truthHeading: "Pay per truth",
+  truthLead: "One hold of $50.00 for 50 company records. Each record is judged. Capture keeps the ones that passed, and releases the rest.",
+  truthPlay: "Run the 50 records",
+  truthCaptured: "Captured",
+  truthReleased: "Released",
   honest: "Honest delivery",
   empty: "Empty delivery",
   askHeading: "Ask for the job",
@@ -177,6 +187,11 @@ const JA: Copy = {
   demoHeading: "同じ仕事、二つの納品",
   demoLead: "一度押します。左は記録が届き、右は何も届きません。",
   play: "同じ仕事を両方で再生",
+  truthHeading: "正しかった分だけ払う",
+  truthLead: "会社の記録50件に、与信は1回です。1件ずつ判定し、合格した分だけ確定して、残りは解放します。",
+  truthPlay: "50件を判定する",
+  truthCaptured: "確定",
+  truthReleased: "解放",
   honest: "正直な納品",
   empty: "空の納品",
   askHeading: "仕事を頼む",

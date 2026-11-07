@@ -9,6 +9,7 @@ import { aggregateSellers, approvalSentence, loadFrozenExport, pickSeller, type 
 import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
 import { type Outcome, type Scorer } from "../verify/judge.js";
 import { deliveryFor, type DeliveryMode } from "./deliveries.js";
+import { settlePayPerTruth, TRUTH_COUNT, TRUTH_HOLD_CENTS, TRUTH_PASSED, type TruthResult } from "../pay/truth.js";
 
 const DAY = 86_400_000;
 const BALANCED_AUTO_MAX = 5_000;
@@ -196,24 +197,7 @@ export class Desk {
     if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
     const job = this.must(jobId);
     if (job.engine) return this.view(job);
-    const engine = new PaymentEngine({
-      rail: this.rail,
-      policy: new PolicyStore({
-        id: job.jobId,
-        budgetCents: job.budgetCents,
-        allowedSellers: [this.seller.resourceKey],
-        expiresAt: this.now() + 7 * DAY,
-        revoked: false,
-        autonomy: job.autonomy,
-        autoApproveMaxCents: job.autonomy === "balanced" ? BALANCED_AUTO_MAX : 0,
-        dailyCapCents: job.budgetCents,
-        monthlyCapCents: job.budgetCents,
-      }),
-      conditions: this.conditions,
-      now: this.now,
-      ledger: new Ledger(this.now),
-      scorer: this.scorer,
-    });
+    const engine = this.openEngine(job);
     job.engine = engine;
     let result = await engine.requestJob({
       jobId: job.jobId,
@@ -236,6 +220,34 @@ export class Desk {
     for (const item of job.items) deliveries[item.itemId] = delivery;
     await job.engine.settle(job.jobId, deliveries);
     return this.view(job);
+  }
+
+  /** One hold for 50 records. 37 pass. Capture is 37/50 of the hold; the rest is released. */
+  async payPerTruth(): Promise<TruthResult> {
+    if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
+    const jobId = `truth_${randomUUID()}`;
+    const job: Planned = {
+      jobId,
+      brief: "50 company records",
+      autonomy: "autopilot",
+      budgetCents: TRUTH_HOLD_CENTS,
+      items: Array.from({ length: TRUTH_COUNT }, (_, i) => ({
+        itemId: `rec-${String(i + 1).padStart(2, "0")}`,
+        label: `Record ${i + 1}`,
+        priceCents: Math.floor(TRUTH_HOLD_CENTS / TRUTH_COUNT),
+      })),
+      engine: null,
+    };
+    const engine = this.openEngine(job);
+    job.engine = engine;
+    this.jobs.set(jobId, job);
+    return settlePayPerTruth(engine, this.conditionId, {
+      jobId,
+      sellerId: this.seller.resourceKey,
+      holdCents: TRUTH_HOLD_CENTS,
+      count: TRUTH_COUNT,
+      passed: TRUTH_PASSED,
+    });
   }
 
   async playBoth(budgetCents: number): Promise<{ left: JobView; right: JobView }> {
@@ -356,6 +368,27 @@ export class Desk {
       if (v && typeof v === "object" && !Array.isArray(v) && typeof v.reason === "string") out[id] = v.reason;
     }
     return out;
+  }
+
+  private openEngine(job: Planned): PaymentEngine {
+    return new PaymentEngine({
+      rail: this.rail,
+      policy: new PolicyStore({
+        id: job.jobId,
+        budgetCents: job.budgetCents,
+        allowedSellers: [this.seller.resourceKey],
+        expiresAt: this.now() + 7 * DAY,
+        revoked: false,
+        autonomy: job.autonomy,
+        autoApproveMaxCents: job.autonomy === "balanced" ? BALANCED_AUTO_MAX : 0,
+        dailyCapCents: job.budgetCents,
+        monthlyCapCents: job.budgetCents,
+      }),
+      conditions: this.conditions,
+      now: this.now,
+      ledger: new Ledger(this.now),
+      scorer: this.scorer,
+    });
   }
 
   private must(jobId: string): Planned {
