@@ -21,6 +21,8 @@ describe("screen language", () => {
     expect(langFromSearch("?lang=jp")).toBe("en");
     expect(langFromSearch("?lang=ja")).toBe("ja");
     expect(langFromSearch("?x=1&lang=ja")).toBe("ja");
+    expect(copyFor("en").simulatedBanner).toBe("Simulated. No money moves.");
+    expect(copyFor("ja").simulatedBanner).toBe("模擬・お金は動かない");
     expect(copyFor("en").title).toBe("Place a hold. Pay only for what arrived.");
     expect(copyFor("ja").title).toBe("与信する。届いた分だけ支払う。");
     expect(copyFor("ja").play).not.toBe(copyFor("en").play);

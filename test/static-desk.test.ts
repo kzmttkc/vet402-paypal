@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { SIMULATED_BANNER } from "../src/i18n/copy.js";
+import { copyFor } from "../src/i18n/copy.js";
 import { sha256Hex } from "../src/hash/sha256.js";
 import { createDemoDesk, DEMO_SELLER } from "../src/demo/browser-desk.js";
 import { aggregateSellers, approvalSentence, loadFrozenExport, pickSellerFor } from "../src/sellers/index.js";
@@ -34,7 +34,8 @@ describe("static demo", () => {
     expect(played.left.orderId).toMatch(/^ORDER-MOCK-/);
     expect(played.right.captureId).toBeNull();
     expect(desk.activity().chains.every((chain) => chain.ok)).toBe(true);
-    expect(SIMULATED_BANNER).toBe("模擬・お金は動かない");
+    expect(copyFor("en").simulatedBanner).toBe("Simulated. No money moves.");
+    expect(copyFor("ja").simulatedBanner).toBe("模擬・お金は動かない");
   });
 
   it("voids an open hold from the stop switch", async () => {

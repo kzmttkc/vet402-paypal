@@ -3,7 +3,7 @@ import { formatUsd } from "../policy/money.js";
 /** Screen language. Amounts and ids are not translated. */
 export type Lang = "en" | "ja";
 
-/** Shown on the static page in both languages. Money does not move. */
+/** Japanese static-page banner. The English screen uses Copy.simulatedBanner. */
 export const SIMULATED_BANNER = "模擬・お金は動かない";
 
 export function langFromSearch(search: string): Lang {
@@ -15,6 +15,7 @@ export interface Copy {
   lang: Lang;
   htmlLang: Lang;
   speechLang: "en-US" | "ja-JP";
+  simulatedBanner: string;
   documentTitle: string;
   title: string;
   lead: string;
@@ -115,6 +116,7 @@ const EN: Copy = {
   lang: "en",
   htmlLang: "en",
   speechLang: "en-US",
+  simulatedBanner: "Simulated. No money moves.",
   documentTitle: "Hold, then capture what passed",
   title: "Place a hold. Pay only for what arrived.",
   lead: "The agent buys company records. PayPal holds the budget. Each delivery is checked against a condition fixed before the hold. Capture keeps what passed. The rest is released.",
@@ -210,6 +212,7 @@ const JA: Copy = {
   lang: "ja",
   htmlLang: "ja",
   speechLang: "ja-JP",
+  simulatedBanner: SIMULATED_BANNER,
   documentTitle: "与信して、届いた分だけ確定する",
   title: "与信する。届いた分だけ支払う。",
   lead: "エージェントが会社の記録を買います。予算は PayPal が与信します。各納品は、与信の前に固定した条件と照合します。合格した分を確定し、残りは解放します。",

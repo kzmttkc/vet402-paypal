@@ -3,7 +3,7 @@ import type { ScamKind, ScamResult, ScamWin } from "../../src/demo/scam.js";
 import type { TruthResult } from "../../src/pay/truth.js";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { SIMULATED_BANNER, copyFor, langFromSearch, modelLoadingLine, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
+import { copyFor, langFromSearch, modelLoadingLine, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
 import { pageScoreSource } from "./page-score";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
@@ -575,7 +575,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
     <>
       {simulated && (
         <p className="sim-banner" data-testid="sim-banner">
-          {SIMULATED_BANNER}
+          {copy.simulatedBanner}
         </p>
       )}
       {simulated && scorePhase && (
