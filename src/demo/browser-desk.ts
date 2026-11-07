@@ -5,17 +5,17 @@ import { MockPayPalRail } from "../rail/mock.js";
 import { completenessScorer, type Scorer } from "../verify/judge.js";
 
 /**
- * The seller the live screen would pick from the frozen export
+ * The company-data seller the live screen picks from the frozen export
  * (counted 2026-11-07). The static page does not read the CSV.
  */
 export const DEMO_SELLER: SellerStats = {
-  resourceKey: "headers.use.x402atlas.com",
-  attempts: 6,
-  settled: 6,
-  paid2xx: 6,
+  resourceKey: "agent402.tools/api/skill/company-dossier",
+  attempts: 3,
+  settled: 3,
+  paid2xx: 3,
   paid4xx: 0,
   paid5xx: 0,
-  shapeMatch: 6,
+  shapeMatch: 3,
   shapeMismatch: 0,
   shapeMatchRate: 1,
   postPayErrorRate: 0,

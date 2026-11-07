@@ -59,6 +59,9 @@ describe("screen language", () => {
     expect(ja.holdQuestion).toContain(formatUsd(5000));
     expect(presentHoldQuestion("en", 5000, job.holdQuestion)).toBe(job.holdQuestion);
     expect(presentSellerLine("ja", seller)).toBe("4 件の支払い済み、形の一致 50.0%、支払い後のエラー 50.0%");
+    expect(presentSellerLine("ja", "Sample seller. No outlet in the frozen export matches this job.")).toBe(
+      "見本の売り手です。凍結した書き出しに、この仕事に合う売り口はありません。",
+    );
     expect(presentSellerLine("en", seller)).toBe(seller);
     expect(ja.conditionId).toBe("cond_abc");
     expect(ja.orderId).toBe("ORDER-MOCK-000001");

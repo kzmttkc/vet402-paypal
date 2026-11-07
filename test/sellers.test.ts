@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateSellers, approvalSentence, loadFrozenExport, parseCsv, pickSeller, sellerCard, totalsOf, type ExportRow } from "../src/sellers/index.js";
+import { aggregateSellers, approvalSentence, jobKindFromBrief, loadFrozenExport, outletKind, parseCsv, pickSeller, pickSellerFor, SAMPLE_SELLER_LINE, sellerCard, totalsOf, type ExportRow } from "../src/sellers/index.js";
 
 const row = (o: Partial<ExportRow>): ExportRow => ({ resource_key: "a", status: "settled", http_status_paid: "200", l2_schema: "match", latency_ms: "100", ...o });
 
@@ -36,6 +36,35 @@ describe("seller track record", () => {
       row({ resource_key: "unchecked", l2_schema: "not_checked" }),
     ]);
     expect(pickSeller(m).resourceKey).toBe("big");
+  });
+
+  it("discounts a perfect record of six behind a longer record that mostly matched", () => {
+    const m = aggregateSellers([
+      ...Array.from({ length: 6 }, () => row({ resource_key: "headers.use.x402atlas.com" })),
+      ...Array.from({ length: 90 }, () => row({ resource_key: "registry.example/companies" })),
+      ...Array.from({ length: 10 }, () => row({ resource_key: "registry.example/companies", l2_schema: "mismatch" })),
+    ]);
+    expect(pickSeller(m).resourceKey).toBe("registry.example/companies");
+  });
+
+  it("picks a company outlet for a company job, and says when the export has none", () => {
+    const frozen = aggregateSellers(loadFrozenExport().rows);
+    const company = pickSellerFor(frozen, jobKindFromBrief("Collect company records"));
+    expect(company.sample).toBe(false);
+    expect(outletKind(company.seller.resourceKey)).toBe("company");
+    expect(company.seller.resourceKey).toBe("agent402.tools/api/skill/company-dossier");
+    expect(company.seller.resourceKey).not.toMatch(/header/i);
+
+    const headersOnly = aggregateSellers([row({ resource_key: "headers.use.x402atlas.com" })]);
+    const missing = pickSellerFor(headersOnly, "company");
+    expect(missing.sample).toBe(true);
+    expect(missing.seller.resourceKey).toBe("sample.seller");
+    expect(SAMPLE_SELLER_LINE).toContain("Sample seller");
+
+    const headers = pickSellerFor(frozen, jobKindFromBrief("Fetch HTTP headers"));
+    expect(headers.sample).toBe(false);
+    expect(outletKind(headers.seller.resourceKey)).toBe("headers");
+    expect(pickSellerFor(frozen, jobKindFromBrief("tomorrow's weather")).sample).toBe(true);
   });
 
   it("prefers a seller whose deliveries matched the shape over a busier seller that missed it", () => {

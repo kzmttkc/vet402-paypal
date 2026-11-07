@@ -21,6 +21,7 @@ export interface JobView {
   status: string;
   sellerId: string;
   sellerLine: string;
+  sellerSample?: boolean;
   holdCents: number;
   capturedCents: number;
   holdQuestion: string;

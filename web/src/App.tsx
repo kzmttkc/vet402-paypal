@@ -243,7 +243,7 @@ function Slip({ job, copy, onHold, busy }: { job: JobView; copy: Copy; onHold: (
         <div>
           <dt>{copy.seller}</dt>
           <dd className="tiny">{job.sellerId}</dd>
-          <dd className="seller-line" data-testid="approval-seller-line">
+          <dd className="seller-line" data-testid="approval-seller-line" data-sample={job.sellerSample ? "true" : "false"}>
             {job.sellerLine}
           </dd>
         </div>

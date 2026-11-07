@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { creditPlan, fundInParts } from "../src/sellers/credit.js";
 import { Desk } from "../src/server/desk.js";
-import { aggregateSellers, loadFrozenExport, pickSeller, type SellerStats } from "../src/sellers/index.js";
+import { aggregateSellers, loadFrozenExport, pickSeller, pickSellerFor, type SellerStats } from "../src/sellers/index.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
 import { good, setup } from "./helpers.js";
 
@@ -104,12 +104,30 @@ describe("seller track record decides the hold", () => {
     expect(once.capturedCents).toBe(1_000);
   });
 
+  it("names a sample seller when no company outlet is in the set", () => {
+    const headers: SellerStats = { ...established, resourceKey: "headers.use.x402atlas.com" };
+    const desk = new Desk({
+      rail: new MockPayPalRail(),
+      sellers: new Map([[headers.resourceKey, headers]]),
+      scorer: () => 0.95,
+    });
+    const card = desk.plan({ brief: "Collect company records", budgetCents: 5_000, autonomy: "careful" });
+    expect(card.sellerSample).toBe(true);
+    expect(card.sellerId).toBe("sample.seller");
+    expect(card.sellerLine).toBe("Sample seller. No outlet in the frozen export matches this job.");
+    expect(card.sellerId).not.toMatch(/header/i);
+  });
+
   it("uses the frozen export: the picked seller is one hold, a seller with no paid purchases is five parts", () => {
     const sellers = aggregateSellers(loadFrozenExport().rows);
     const top = pickSeller(sellers);
     const fresh = [...sellers.values()].filter((seller) => seller.settled === 0).sort((a, b) => a.resourceKey.localeCompare(b.resourceKey))[0];
     expect(fresh).toBeTruthy();
     expect(creditPlan(top, 25).parts).toBe(1);
+    const company = pickSellerFor(sellers, "company");
+    expect(company.sample).toBe(false);
+    expect(company.seller.resourceKey).not.toMatch(/header/i);
+    expect(creditPlan(company.seller, 25).parts).toBeGreaterThan(1);
     expect(creditPlan(fresh!, 25).reason).toBe("New seller: holding in 5 parts");
   });
 

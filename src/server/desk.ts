@@ -5,7 +5,7 @@ import { PaymentEngine, type JobStatus } from "../engine/index.js";
 import { formatUsd } from "../policy/money.js";
 import { PolicyStore, type Autonomy } from "../policy/mandate.js";
 import type { PayPalRail } from "../rail/types.js";
-import { aggregateSellers, approvalSentence, loadFrozenExport, pickSeller, type SellerStats } from "../sellers/index.js";
+import { aggregateSellers, approvalSentence, jobKindFromBrief, loadFrozenExport, pickSellerFor, SAMPLE_SELLER_LINE, type SellerStats } from "../sellers/index.js";
 import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
 import { defaultScorerFor, type Outcome, type Scorer } from "../verify/judge.js";
 import { warmingScorer } from "../verify/warmup.js";
@@ -42,6 +42,7 @@ export interface JobView {
   status: JobStatus | "planned";
   sellerId: string;
   sellerLine: string;
+  sellerSample: boolean;
   holdCents: number;
   capturedCents: number;
   releasedCents: number;
@@ -109,6 +110,7 @@ interface Planned {
   items: Line[];
   records: { itemId: string; priceCents: number }[];
   seller: SellerStats;
+  sellerSample: boolean;
   credit: CreditPlan;
   approver: string;
   engine: PaymentEngine | null;
@@ -165,6 +167,7 @@ function summaryOf(status: JobStatus | "planned", hold: number, captured: number
 export class Desk {
   readonly railName: string;
   readonly seller: SellerStats;
+  private readonly sellerSample: boolean;
   readonly conditionId: string;
   private readonly sellers: ReadonlyMap<string, SellerStats>;
   private readonly rail: PayPalRail;
@@ -192,7 +195,9 @@ export class Desk {
     this.onScamWin = opts.onScamWin;
     const sellers = opts.sellers ?? aggregateSellers(loadFrozenExport().rows);
     this.sellers = sellers;
-    this.seller = pickSeller(sellers);
+    const standing = pickSellerFor(sellers, "company");
+    this.seller = standing.seller;
+    this.sellerSample = standing.sample;
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
     this.scorer = opts.scorer ?? warmingScorer(this.conditions.get(this.conditionId));
     this.samples = [
@@ -207,7 +212,9 @@ export class Desk {
   }
 
   plan(input: { brief: string; budgetCents: number; autonomy: Autonomy; seller?: "established" | "new" }): JobView {
-    const seller = input.seller === "new" ? this.newSeller() : this.seller;
+    const choice = pickSellerFor(this.sellers, jobKindFromBrief(input.brief));
+    const seller = input.seller === "new" ? this.newSeller() : choice.seller;
+    const sellerSample = input.seller === "new" ? false : choice.sample;
     const records = input.seller === "new" ? pricedRecords(input.budgetCents, 25) : splitBudget(input.budgetCents);
     const credit = creditPlan(seller, records.length);
     const items = credit.parts === 1 ? records : partLines(records, credit.partSize);
@@ -219,6 +226,7 @@ export class Desk {
       items,
       records,
       seller,
+      sellerSample,
     });
     this.jobs.set(job.jobId, job);
     return this.view(job);
@@ -486,14 +494,16 @@ export class Desk {
   }
 
   private finishPlan(
-    job: Omit<Planned, "records" | "seller" | "credit" | "approver" | "engine"> & {
+    job: Omit<Planned, "records" | "seller" | "sellerSample" | "credit" | "approver" | "engine"> & {
       seller?: SellerStats;
+      sellerSample?: boolean;
       records?: Planned["records"];
     },
   ): Planned {
     const seller = job.seller ?? this.seller;
+    const sellerSample = job.sellerSample ?? this.sellerSample;
     const records = job.records ?? job.items.map((item) => ({ itemId: item.itemId, priceCents: item.priceCents }));
-    return { ...job, seller, records, credit: creditPlan(seller, records.length), approver: "buyer", engine: null };
+    return { ...job, seller, sellerSample, records, credit: creditPlan(seller, records.length), approver: "buyer", engine: null };
   }
 
   private async authorizeSlice(job: Planned, index: number): Promise<void> {
@@ -542,7 +552,8 @@ export class Desk {
       autonomy: job.autonomy,
       status,
       sellerId: job.seller.resourceKey,
-      sellerLine: approvalSentence(job.seller),
+      sellerLine: job.sellerSample ? SAMPLE_SELLER_LINE : approvalSentence(job.seller),
+      sellerSample: job.sellerSample,
       holdCents: job.budgetCents,
       capturedCents: captured,
       releasedCents: status === "captured" ? job.budgetCents - captured : status === "voided" ? job.budgetCents : 0,

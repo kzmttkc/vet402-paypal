@@ -343,9 +343,11 @@ export function scoreModelLine(lang: Lang, state: PageScorePhase): string {
 }
 
 const SELLER_LINE = /^(\d+) paid purchases, (\d+\.\d%) matched the promised shape, (\d+\.\d%) errors after payment$/;
+const SAMPLE_SELLER_LINE = "Sample seller. No outlet in the frozen export matches this job.";
 
 export function presentSellerLine(lang: Lang, line: string): string {
   if (lang === "en") return line;
+  if (line === SAMPLE_SELLER_LINE) return "見本の売り手です。凍結した書き出しに、この仕事に合う売り口はありません。";
   const matched = SELLER_LINE.exec(line);
   if (!matched) return line;
   return `${matched[1]} 件の支払い済み、形の一致 ${matched[2]}、支払い後のエラー ${matched[3]}`;

@@ -95,6 +95,66 @@ export function totalsOf(rows: readonly ExportRow[], sellers = aggregateSellers(
 
 const pct = (x: number | null) => (x === null ? "n/a" : `${(x * 100).toFixed(1)}%`);
 
+/**
+ * A perfect record of a few deliveries is not treated as a perfect record of many.
+ * Score = shape matches / (checked deliveries + this prior).
+ */
+export const TRACK_RECORD_PRIOR = 30;
+
+export type OutletKind = "company" | "headers" | "other";
+
+/** Shown when the frozen export has no outlet for this job. It is not a paid endpoint. */
+export const SAMPLE_SELLER_LINE = "Sample seller. No outlet in the frozen export matches this job.";
+
+export const SAMPLE_SELLER: SellerStats = {
+  resourceKey: "sample.seller",
+  attempts: 0,
+  settled: 0,
+  paid2xx: 0,
+  paid4xx: 0,
+  paid5xx: 0,
+  shapeMatch: 0,
+  shapeMismatch: 0,
+  shapeMatchRate: null,
+  postPayErrorRate: null,
+};
+
+/** Company-data and header outlets are named in the resource key. Calendar "business days" are not company data. */
+export function outletKind(resourceKey: string): OutletKind {
+  const key = resourceKey.toLowerCase();
+  if (key.includes("header")) return "headers";
+  if (/business-days|business-time/.test(key)) return "other";
+  if (/compan(?:y|ies)|entreprise|company-dossier|company_base|sec\/company/.test(key)) return "company";
+  return "other";
+}
+
+export function jobKindFromBrief(brief: string): OutletKind {
+  if (/\bcompan(?:y|ies)\b|会社/.test(brief)) return "company";
+  if (/\bheaders?\b/i.test(brief)) return "headers";
+  return "other";
+}
+
+/** Null when this seller has no checked shape to score. */
+export function trackScore(seller: SellerStats): number | null {
+  const checked = seller.shapeMatch + seller.shapeMismatch;
+  if (seller.settled <= 0 || seller.shapeMatchRate === null || checked === 0) return null;
+  return seller.shapeMatch / (checked + TRACK_RECORD_PRIOR);
+}
+
+function byTrackRecord(a: SellerStats, b: SellerStats): number {
+  const score = (trackScore(b) ?? -1) - (trackScore(a) ?? -1);
+  if (score !== 0) return score;
+  const err = (a.postPayErrorRate ?? 1) - (b.postPayErrorRate ?? 1);
+  if (err !== 0) return err;
+  if (b.settled !== a.settled) return b.settled - a.settled;
+  return a.resourceKey.localeCompare(b.resourceKey);
+}
+
+export interface SellerChoice {
+  seller: SellerStats;
+  sample: boolean;
+}
+
 /** One line for the approval card, in the Day 1 wording the tests locked. */
 export function sellerCard(s: SellerStats): string {
   return `${s.resourceKey}: settled ${s.settled}, shape match ${pct(s.shapeMatchRate)} (${s.shapeMatch}/${s.shapeMatch + s.shapeMismatch}), errors after payment ${pct(s.postPayErrorRate)}`;
@@ -110,21 +170,27 @@ export function approvalSentence(s: SellerStats): string {
 }
 
 /**
- * Seller for a new job. Volume alone is not the record: a busier seller that missed
- * the declared shape loses to one whose paid deliveries matched it.
- * Order: higher shape-match rate, then more paid purchases, then fewer errors after payment.
+ * Seller for a new job, across every outlet.
+ * A short perfect record is discounted: score = matches / (checked + {@link TRACK_RECORD_PRIOR}).
+ * Ties break on fewer errors after payment, then more paid purchases, then the resource key.
  */
 export function pickSeller(sellers: ReadonlyMap<string, SellerStats>): SellerStats {
-  const list = [...sellers.values()].filter((s) => s.settled > 0 && s.shapeMatchRate !== null);
-  list.sort((a, b) => {
-    const rate = (b.shapeMatchRate ?? 0) - (a.shapeMatchRate ?? 0);
-    if (rate !== 0) return rate;
-    if (b.settled !== a.settled) return b.settled - a.settled;
-    const err = (a.postPayErrorRate ?? 1) - (b.postPayErrorRate ?? 1);
-    if (err !== 0) return err;
-    return a.resourceKey.localeCompare(b.resourceKey);
-  });
+  const list = [...sellers.values()].filter((s) => trackScore(s) !== null);
+  list.sort(byTrackRecord);
   const top = list[0];
   if (!top) throw new Error("no settled seller with a shape check");
   return top;
+}
+
+/**
+ * Same score, after keeping only outlets that sell this kind of data.
+ * When the frozen export has none, the card says so instead of borrowing another outlet.
+ */
+export function pickSellerFor(sellers: ReadonlyMap<string, SellerStats>, kind: OutletKind): SellerChoice {
+  if (kind !== "company" && kind !== "headers") return { seller: SAMPLE_SELLER, sample: true };
+  const list = [...sellers.values()].filter((s) => trackScore(s) !== null && outletKind(s.resourceKey) === kind);
+  list.sort(byTrackRecord);
+  const top = list[0];
+  if (!top) return { seller: SAMPLE_SELLER, sample: true };
+  return { seller: top, sample: false };
 }
