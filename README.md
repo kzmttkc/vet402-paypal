@@ -137,6 +137,37 @@ test-sandbox/  live sandbox tests (npm run test:sandbox)
 docs/          sandbox-run.json (ids and statuses read back from the sandbox)
 ```
 
+## MCP
+
+`npm run mcp` speaks MCP on stdin and stdout. The rail is the mock: no PayPal key. Tools:
+
+| Tool | What it does |
+|---|---|
+| `plan_job` | Drafts the work from a brief. Amounts are computed in code. |
+| `place_hold` | Authorizes the hold. Refuses unless `confirm` is `true`. |
+| `check_delivery` | Judges one body. Does not capture or void. |
+| `settle_job` | Captures what passed, or voids. Refuses unless `confirm` is `true`. |
+| `emergency_stop` | Voids every open authorization. |
+| `get_activity` | Ledger lines: order, authorization, capture, void, hash. |
+
+The first score downloads `all-MiniLM-L6-v2` into `.cache/transformers`. Set `ANTHROPIC_API_KEY` only if you want Claude to draft the plan or score; the key is not printed, and prices are still computed in code.
+
+Claude Desktop, in `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "vet402-paypal": {
+      "command": "npm",
+      "args": ["run", "mcp"],
+      "cwd": "/absolute/path/to/vet402-paypal"
+    }
+  }
+}
+```
+
+Restart Claude Desktop after saving. Ask it to plan a job, then place the hold only after you agree (`confirm: true`).
+
 ## License
 
 MIT

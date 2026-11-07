@@ -16,6 +16,7 @@
     "build": "vite build --config web/vite.config.ts",
     "screens": "tsx scripts/screenshots.ts",
     "eval": "node --no-deprecation --import tsx eval/run.ts",
+    "mcp": "node --no-deprecation --import tsx src/mcp/main.ts",
     "sellers": "node --no-deprecation --import tsx scripts/seller-totals.ts",
     "fetch:export": "node --no-deprecation --import tsx scripts/fetch-export.ts",
     "test:sandbox": "node --env-file=.env ./node_modules/vitest/vitest.mjs run --config vitest.sandbox.config.ts",
@@ -25,8 +26,10 @@
   "dependencies": {
     "@hono/node-server": "1.13.8",
     "@huggingface/transformers": "^4.3.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "hono": "4.6.16",
-    "tsx": "4.19.2"
+    "tsx": "4.19.2",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@fontsource/figtree": "5.2.8",
