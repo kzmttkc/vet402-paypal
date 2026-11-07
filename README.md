@@ -2,6 +2,31 @@
 
 Fund your agent's data job with PayPal. It buys only from sellers with a real track record, checks every delivery against the promise, and captures only what passed.
 
+No signup. The screen and `npm test` use the mock rail. Money moves only when you point the same screen at the PayPal sandbox.
+
+## Two minutes
+
+| Do this | You see |
+|---|---|
+| `npm install && npm run dev`, then open http://127.0.0.1:5173 | the hold screen, in English, on your phone width |
+| **Play the same job both ways** | left **CAPTURED**, right **VOIDED** and "$0. Your agent didn't lose a cent." |
+| Type a job, pick a budget and Careful / Balanced / Autopilot, then **Show the approval card** | the breakdown, the condition id, the seller line ("n paid purchases, x% matched the promised shape, y% errors after payment"), and "May I place a hold of $X until each delivery checks out?" |
+| **Place the hold**, then **Deliver the records** / **Deliver nothing** / **Deliver late** | PASS → captured, FAIL → voided, or UNSURE → human, then "Captured $a of $b hold. $c released." |
+| Scroll to **With a person** | sample holds in the grid; **Reset samples** puts them back |
+| Scroll to **Activity** | order, authorization, capture, and refund ids, the verdict, and the ledger hash |
+| **Void every open hold** | every open authorization is voided |
+
+## Try it on the PayPal sandbox
+
+The screen is the same. `PAYPAL_ENV=sandbox` swaps the mock rail for the sandbox. Keys stay in `.env`, which is gitignored. This repo does not contain them.
+
+1. In a PayPal sandbox app (developer.paypal.com), copy the client id and secret into `.env` as `PAYPAL_ENV=sandbox`, `PAYPAL_CLIENT_ID`, and `PAYPAL_CLIENT_SECRET`.
+2. `npm install && npm run build && npm start` — the process listens on `PORT` (8787 if unset). On Render, the build command is `npm install && npm run build` and the start command is `npm start`.
+3. Open the URL. Play a job, or place a hold and deliver the records.
+4. **Activity** lists the sandbox order, authorization, capture, and refund ids. The card buyer is PayPal's public test card; no buyer login.
+
+`npm run dev` does the same locally, with the API on port 8787 and the screen on port 5173. Leave `PAYPAL_ENV` unset and the screen stays on the mock.
+
 > The engine runs on the real PayPal sandbox (`PAYPAL_ENV=sandbox`) or on an in-memory mock with the same contract. `npm test` runs with no keys and no network; the live sandbox checks are a separate command.
 
 ## What it is
@@ -103,6 +128,8 @@ src/ledger/    SHA-256 hash-chained ledger
 src/verify/    fixed conditions (content-hash ids), judge, pluggable scorer
 src/sellers/   export parser, per-seller track record, frozen loader
 src/engine/    the path from request to capture / void / human
+src/server/    HTTP API: plan, approve, settle, review queue, activity, stop
+web/           the screen (React, Vite, TypeScript)
 eval/          failure mix, case generator, runner
 scripts/       sandbox run, sandbox demo, seller totals, export fetch
 test-sandbox/  live sandbox tests (npm run test:sandbox)

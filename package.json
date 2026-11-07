@@ -10,7 +10,11 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p web --noEmit",
+    "dev": "tsx scripts/dev.ts",
+    "start": "tsx src/server/index.ts",
+    "build": "vite build --config web/vite.config.ts",
+    "screens": "tsx scripts/screenshots.ts",
     "eval": "node --no-deprecation --import tsx eval/run.ts",
     "sellers": "node --no-deprecation --import tsx scripts/seller-totals.ts",
     "fetch:export": "node --no-deprecation --import tsx scripts/fetch-export.ts",
@@ -18,10 +22,25 @@
     "sandbox:run": "node --no-deprecation --env-file=.env --import tsx scripts/sandbox-run.ts",
     "demo:sandbox": "node --no-deprecation --env-file=.env --import tsx scripts/demo-sandbox.ts"
   },
+  "dependencies": {
+    "@hono/node-server": "1.13.8",
+    "hono": "4.6.16",
+    "tsx": "4.19.2"
+  },
   "devDependencies": {
+    "@fontsource/figtree": "5.2.8",
+    "@fontsource/newsreader": "5.2.8",
     "@types/node": "20.17.10",
-    "tsx": "4.19.2",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "ag-grid-community": "32.3.3",
+    "ag-grid-react": "32.3.3",
+    "playwright": "1.49.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "typescript": "5.6.3",
+    "vite": "6.0.11",
     "vitest": "2.1.9"
   }
 }

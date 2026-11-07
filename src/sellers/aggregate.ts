@@ -95,7 +95,36 @@ export function totalsOf(rows: readonly ExportRow[], sellers = aggregateSellers(
 
 const pct = (x: number | null) => (x === null ? "n/a" : `${(x * 100).toFixed(1)}%`);
 
-/** One line for the approval card. */
+/** One line for the approval card, in the Day 1 wording the tests locked. */
 export function sellerCard(s: SellerStats): string {
   return `${s.resourceKey}: settled ${s.settled}, shape match ${pct(s.shapeMatchRate)} (${s.shapeMatch}/${s.shapeMatch + s.shapeMismatch}), errors after payment ${pct(s.postPayErrorRate)}`;
+}
+
+/**
+ * The sentence on the approval card.
+ * n = settled (paid) purchases, x = declared-shape match rate, y = 4xx/5xx after payment.
+ * Computed from the frozen export. The CSV itself has no sentence.
+ */
+export function approvalSentence(s: SellerStats): string {
+  return `${s.settled} paid purchases, ${pct(s.shapeMatchRate)} matched the promised shape, ${pct(s.postPayErrorRate)} errors after payment`;
+}
+
+/**
+ * Seller for a new job. Volume alone is not the record: a busier seller that missed
+ * the declared shape loses to one whose paid deliveries matched it.
+ * Order: higher shape-match rate, then more paid purchases, then fewer errors after payment.
+ */
+export function pickSeller(sellers: ReadonlyMap<string, SellerStats>): SellerStats {
+  const list = [...sellers.values()].filter((s) => s.settled > 0 && s.shapeMatchRate !== null);
+  list.sort((a, b) => {
+    const rate = (b.shapeMatchRate ?? 0) - (a.shapeMatchRate ?? 0);
+    if (rate !== 0) return rate;
+    if (b.settled !== a.settled) return b.settled - a.settled;
+    const err = (a.postPayErrorRate ?? 1) - (b.postPayErrorRate ?? 1);
+    if (err !== 0) return err;
+    return a.resourceKey.localeCompare(b.resourceKey);
+  });
+  const top = list[0];
+  if (!top) throw new Error("no settled seller with a shape check");
+  return top;
 }

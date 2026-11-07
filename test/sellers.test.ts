@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateSellers, loadFrozenExport, parseCsv, sellerCard, totalsOf, type ExportRow } from "../src/sellers/index.js";
+import { aggregateSellers, approvalSentence, loadFrozenExport, parseCsv, pickSeller, sellerCard, totalsOf, type ExportRow } from "../src/sellers/index.js";
 
 const row = (o: Partial<ExportRow>): ExportRow => ({ resource_key: "a", status: "settled", http_status_paid: "200", l2_schema: "match", latency_ms: "100", ...o });
 
@@ -25,6 +25,27 @@ describe("seller track record", () => {
     expect(a.postPayErrorRate).toBe(0.5);
     expect(m.get("b")!.shapeMatchRate).toBeNull();
     expect(sellerCard(a)).toBe("a: settled 4, shape match 50.0% (1/2), errors after payment 50.0%");
+    expect(approvalSentence(a)).toBe("4 paid purchases, 50.0% matched the promised shape, 50.0% errors after payment");
+  });
+
+  it("picks the settled seller with the most paid purchases", () => {
+    const m = aggregateSellers([
+      row({ resource_key: "small", status: "settled" }),
+      row({ resource_key: "big" }),
+      row({ resource_key: "big" }),
+      row({ resource_key: "unchecked", l2_schema: "not_checked" }),
+    ]);
+    expect(pickSeller(m).resourceKey).toBe("big");
+  });
+
+  it("prefers a seller whose deliveries matched the shape over a busier seller that missed it", () => {
+    const m = aggregateSellers([
+      row({ resource_key: "busy", l2_schema: "mismatch" }),
+      row({ resource_key: "busy", l2_schema: "mismatch" }),
+      row({ resource_key: "busy", l2_schema: "mismatch" }),
+      row({ resource_key: "careful" }),
+    ]);
+    expect(pickSeller(m).resourceKey).toBe("careful");
   });
 
   it("frozen export: per-seller sums equal the export totals (counted independently on 2026-11-07)", () => {
