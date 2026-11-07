@@ -1,0 +1,7 @@
+{
+  "url": "https://vet402.com/api/v1/observatory/export.csv?days=365",
+  "fetchedAt": "2026-11-07T03:31:32.455Z",
+  "bytes": 5735065,
+  "rows": 22071,
+  "sha256": "c0fea21a1b476ec853588f1215da174d29cfe0d823ad0877719fe75cbb232169"
+}

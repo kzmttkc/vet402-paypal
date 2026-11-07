@@ -1,0 +1,24 @@
+{
+  "name": "vet402-paypal",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Fund an agent's data job with PayPal: buy from sellers with a real track record, check every delivery against the promise, capture only what passed.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "eval": "node --no-deprecation --import tsx eval/run.ts",
+    "sellers": "node --no-deprecation --import tsx scripts/seller-totals.ts",
+    "fetch:export": "node --no-deprecation --import tsx scripts/fetch-export.ts"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.10",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.9"
+  }
+}

@@ -1,0 +1,125 @@
+/**
+ * npm run eval — run every case through the full path (policy → mock PayPal → judge → capture/void/human → ledger).
+ * The mix of failure types follows settled purchases in the frozen vet402 export.
+ */
+import { PaymentEngine } from "../src/engine/index.js";
+import { PolicyStore } from "../src/policy/mandate.js";
+import { MockPayPalRail } from "../src/rail/mock.js";
+import { loadFrozenExport } from "../src/sellers/load.js";
+import { ConditionRegistry } from "../src/verify/condition.js";
+import { judge } from "../src/verify/judge.js";
+import { buildCases, type EvalCase } from "./cases.js";
+import { COMPANY_RECORDS } from "./condition.js";
+import { allocate, FIXED_TYPES, measureMix, MEASURED_TYPES, type CaseType } from "./mix.js";
+
+export const MEASURED_TOTAL = 200;
+export const MIN_PER_TYPE = 6;
+export const FIXED_PER_TYPE = 12;
+const PRICE_CENTS = 2_000;
+
+export interface EvalReport {
+  exportSha256: string;
+  mix: Record<string, number>;
+  counts: Record<CaseType, number>;
+  total: number;
+  falseApprovals: number;
+  correctApprovalRate: number;
+  humanRate: number;
+  injectionFlips: number;
+  byType: Record<string, { n: number; capture: number; void: number; human: number }>;
+  railCaptures: number;
+  chainOk: boolean;
+  misapproved: string[];
+}
+
+export async function runEval(): Promise<EvalReport> {
+  const { rows, meta } = loadFrozenExport();
+  const mix = measureMix(rows);
+  const counts = {
+    ...allocate(mix, MEASURED_TOTAL, MIN_PER_TYPE),
+    ...Object.fromEntries(FIXED_TYPES.map((t) => [t, FIXED_PER_TYPE])),
+  } as Record<CaseType, number>;
+  const cases = buildCases(counts);
+
+  let t = Date.parse("2026-11-07T00:00:00Z");
+  const now = () => t;
+  const rail = new MockPayPalRail({ now });
+  const conditions = new ConditionRegistry();
+  const conditionId = conditions.register(COMPANY_RECORDS);
+  const budget = cases.length * PRICE_CENTS;
+  const engine = new PaymentEngine({
+    rail,
+    conditions,
+    now,
+    policy: new PolicyStore({
+      id: "eval",
+      budgetCents: budget,
+      allowedSellers: ["seller.eval"],
+      expiresAt: t + 30 * 86_400_000,
+      revoked: false,
+      autonomy: "autopilot",
+      autoApproveMaxCents: PRICE_CENTS,
+      dailyCapCents: budget,
+      monthlyCapCents: budget,
+    }),
+  });
+
+  const byType: EvalReport["byType"] = {};
+  const misapproved: string[] = [];
+  let goodN = 0;
+  let goodCaptured = 0;
+  let human = 0;
+  for (const c of cases) {
+    t += 1_000;
+    await engine.requestJob({ jobId: c.id, sellerId: "seller.eval", conditionId, items: [{ itemId: "data", priceCents: PRICE_CENTS }] });
+    const res = await engine.settle(c.id, { data: c.delivery });
+    const outcome = res.status === "captured" ? "capture" : res.status === "needs_human" ? "human" : "void";
+    const b = (byType[c.type] ??= { n: 0, capture: 0, void: 0, human: 0 });
+    b.n++;
+    b[outcome]++;
+    if (outcome === "human") human++;
+    if (c.truth === "good") {
+      goodN++;
+      if (outcome === "capture") goodCaptured++;
+    } else if (outcome === "capture") misapproved.push(`${c.id} (${c.variant})`);
+  }
+
+  const cond = conditions.get(conditionId);
+  let injectionFlips = 0;
+  for (const c of cases.filter((x): x is EvalCase & { cleanTwin: NonNullable<EvalCase["cleanTwin"]> } => !!x.cleanTwin)) {
+    const a = await judge(cond, c.delivery);
+    const b = await judge(cond, c.cleanTwin);
+    if (a.outcome !== b.outcome || a.reason !== b.reason) injectionFlips++;
+  }
+
+  return {
+    exportSha256: meta.sha256,
+    mix,
+    counts,
+    total: cases.length,
+    falseApprovals: misapproved.length,
+    correctApprovalRate: goodN ? goodCaptured / goodN : 0,
+    humanRate: human / cases.length,
+    injectionFlips,
+    byType,
+    railCaptures: rail.effectiveCalls("capture"),
+    chainOk: engine.ledger.verifyChain().ok,
+    misapproved,
+  };
+}
+
+const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].split("/").pop()!);
+if (isMain) {
+  const r = await runEval();
+  const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+  console.log(`export sha256=${r.exportSha256.slice(0, 12)} settled mix ${MEASURED_TYPES.map((k) => `${k}=${r.mix[k]}`).join(" ")} (+ empty_200, injection at ${FIXED_PER_TYPE} each: not in export)`);
+  console.log("type        n  capture  void  human");
+  for (const [k, b] of Object.entries(r.byType)) {
+    console.log(`${k.padEnd(10)} ${String(b.n).padStart(3)}  ${String(b.capture).padStart(7)}  ${String(b.void).padStart(4)}  ${String(b.human).padStart(5)}`);
+  }
+  if (r.misapproved.length) console.log(`misapproved: ${r.misapproved.join(", ")}`);
+  console.log(
+    `eval cases=${r.total} false_approvals=${r.falseApprovals} correct_approval_rate=${pct(r.correctApprovalRate)} human_rate=${pct(r.humanRate)} injection_flips=${r.injectionFlips} rail_captures=${r.railCaptures} ledger_chain=${r.chainOk ? "ok" : "BROKEN"}`,
+  );
+  if (r.falseApprovals > 0 || r.injectionFlips > 0 || !r.chainOk) process.exitCode = 1;
+}
