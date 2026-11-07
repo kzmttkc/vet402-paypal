@@ -344,3 +344,6 @@ export class PaymentEngine {
     };
   }
 }
+
+/** Rail choice for the engine: PAYPAL_ENV=sandbox → real PayPal sandbox, otherwise the mock. */
+export { railFromEnv, SANDBOX_TEST_CARD } from "../rail/select.js";

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { MockPayPalRail } from "../src/rail/mock.js";
-import { SandboxPayPalRail } from "../src/rail/sandbox.js";
 import { RailError } from "../src/rail/types.js";
 import { clock, DAY } from "./helpers.js";
 
@@ -74,10 +73,5 @@ describe("mock PayPal rail", () => {
   it("rejects non-integer amounts", async () => {
     const rail = new MockPayPalRail();
     expect(await code(rail.createOrder({ intent: "AUTHORIZE", amountCents: 19.99, currency: "USD", payeeId: "s", referenceId: "r" }, "k"))).toBe("INVALID_AMOUNT");
-  });
-
-  it("sandbox rail is a frame that refuses until wired", async () => {
-    const rail = new SandboxPayPalRail({ clientId: "x", clientSecret: "y" });
-    expect(await code(rail.get("ORDER-1"))).toBe("NOT_IMPLEMENTED");
   });
 });

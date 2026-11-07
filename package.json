@@ -13,7 +13,10 @@
     "typecheck": "tsc --noEmit",
     "eval": "node --no-deprecation --import tsx eval/run.ts",
     "sellers": "node --no-deprecation --import tsx scripts/seller-totals.ts",
-    "fetch:export": "node --no-deprecation --import tsx scripts/fetch-export.ts"
+    "fetch:export": "node --no-deprecation --import tsx scripts/fetch-export.ts",
+    "test:sandbox": "node --env-file=.env ./node_modules/vitest/vitest.mjs run --config vitest.sandbox.config.ts",
+    "sandbox:run": "node --no-deprecation --env-file=.env --import tsx scripts/sandbox-run.ts",
+    "demo:sandbox": "node --no-deprecation --env-file=.env --import tsx scripts/demo-sandbox.ts"
   },
   "devDependencies": {
     "@types/node": "20.17.10",

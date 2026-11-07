@@ -87,7 +87,9 @@ export type RailErrorCode =
   | "MAX_CAPTURE_AMOUNT_EXCEEDED"
   | "REFUND_AMOUNT_EXCEEDED"
   | "IDEMPOTENCY_KEY_REUSED"
-  | "NOT_IMPLEMENTED";
+  | "NOT_IMPLEMENTED"
+  /** Any other PayPal API error; the PayPal issue name is in the message (sandbox rail only). */
+  | "PAYPAL_ERROR";
 
 export class RailError extends Error {
   constructor(

@@ -1,0 +1,169 @@
+{
+  "host": "api-m.sandbox.paypal.com",
+  "run": "run-20261107034254",
+  "startedAt": "2026-11-07T03:42:54.620Z",
+  "readBack": "every id/status below was read with GET after the call that made it",
+  "cases": {
+    "a": {
+      "what": "authorize $20.00 → capture $20.00",
+      "order": {
+        "id": "2ES415235E815594L",
+        "status": "COMPLETED",
+        "intent": "AUTHORIZE",
+        "amount": "20.00",
+        "reference_id": "run-20261107034254-a"
+      },
+      "authorization": {
+        "id": "4C53391800550971K",
+        "status": "CAPTURED",
+        "amount": "20.00",
+        "expiration_time": "2026-12-06T03:42:57Z"
+      },
+      "capture": {
+        "id": "30045445DC8145221",
+        "status": "COMPLETED",
+        "amount": "20.00",
+        "final_capture": true
+      }
+    },
+    "b": {
+      "what": "authorize $50.00 → capture $12.50 with final_capture=true",
+      "order": {
+        "id": "68V137364A632645V",
+        "status": "COMPLETED",
+        "intent": "AUTHORIZE",
+        "amount": "50.00",
+        "reference_id": "run-20261107034254-b"
+      },
+      "authorization": {
+        "id": "27224167CR8866647",
+        "status": "CAPTURED",
+        "amount": "50.00",
+        "expiration_time": "2026-12-06T03:43:06Z"
+      },
+      "capture": {
+        "id": "9X732969JW2516540",
+        "status": "COMPLETED",
+        "amount": "12.50",
+        "final_capture": true
+      }
+    },
+    "c": {
+      "what": "authorize $30.00 → void → capture $10.00",
+      "order": {
+        "id": "73461620V5719005Y",
+        "status": "COMPLETED",
+        "intent": "AUTHORIZE",
+        "amount": "30.00",
+        "reference_id": "run-20261107034254-c"
+      },
+      "authorization": {
+        "id": "00N1620869359422G",
+        "status": "VOIDED",
+        "amount": "30.00",
+        "expiration_time": "2026-12-06T03:43:14Z"
+      },
+      "captureAfterVoid": {
+        "refused": true,
+        "code": "AUTHORIZATION_VOIDED",
+        "issue": "AUTHORIZATION_VOIDED",
+        "httpStatus": 422,
+        "debugId": "ca56955383be3"
+      }
+    },
+    "d": {
+      "what": "authorize $15.00 → capture $15.00 → refund $15.00",
+      "order": {
+        "id": "79G474448V9677001",
+        "status": "COMPLETED",
+        "intent": "AUTHORIZE",
+        "amount": "15.00",
+        "reference_id": "run-20261107034254-d"
+      },
+      "authorization": {
+        "id": "5UC11116RE2567125",
+        "status": "CAPTURED",
+        "amount": "15.00",
+        "expiration_time": "2026-12-06T03:43:22Z"
+      },
+      "capture": {
+        "id": "39R97432469952814",
+        "status": "REFUNDED",
+        "amount": "15.00",
+        "final_capture": true
+      },
+      "refund": {
+        "id": "6RK25870EY4268935",
+        "status": "COMPLETED",
+        "amount": "15.00"
+      }
+    }
+  },
+  "gates": {
+    "gate1": {
+      "question": "can we capture less than the authorized amount?",
+      "passed": true,
+      "evidence": "authorization 27224167CR8866647 status CAPTURED, captured 12.50 of 50.00; rail reads capturedCents=1250"
+    },
+    "gate2": {
+      "question": "can we authorize with a saved payment method while the buyer is not present?",
+      "docs": [
+        "https://developer.paypal.com/docs/checkout/save-payment-methods/during-purchase/orders-api/cards/",
+        "https://developer.paypal.com/docs/api/payment-tokens/v3/"
+      ],
+      "setupToken": {
+        "id": "9KF06212PM873220E",
+        "status": "APPROVED"
+      },
+      "paymentToken": {
+        "id": "7p2918019c535510e",
+        "card_last_digits": "1881",
+        "card_brand": "VISA"
+      },
+      "merchantInitiated": {
+        "payment_source": "card.vault_id + stored_credential(MERCHANT, UNSCHEDULED, SUBSEQUENT)",
+        "refused": false,
+        "order": {
+          "id": "2VF918768H442974L",
+          "status": "COMPLETED",
+          "intent": "AUTHORIZE",
+          "amount": "25.00",
+          "reference_id": "run-20261107034254-g2-mit"
+        },
+        "authorization": {
+          "id": "4P108854H39466338",
+          "status": "CAPTURED",
+          "amount": "25.00",
+          "expiration_time": "2026-12-06T03:43:35Z"
+        },
+        "capture": {
+          "id": "6FC1708084437483W",
+          "status": "COMPLETED",
+          "amount": "25.00",
+          "final_capture": true
+        }
+      },
+      "paypalWallet": {
+        "setupToken": {
+          "id": "7JL562195V043941L",
+          "status": "PAYER_ACTION_REQUIRED"
+        },
+        "approveLinkHost": "www.sandbox.paypal.com",
+        "approved": false
+      },
+      "passed": true
+    }
+  },
+  "buyerApproval": {
+    "order": {
+      "id": "92J5084030716252J",
+      "status": "PAYER_ACTION_REQUIRED",
+      "intent": "AUTHORIZE",
+      "amount": "20.00",
+      "reference_id": "run-20261107034254-approval"
+    },
+    "approveLinkHost": "www.sandbox.paypal.com",
+    "approved": false
+  },
+  "finishedAt": "2026-11-07T03:43:41.883Z"
+}

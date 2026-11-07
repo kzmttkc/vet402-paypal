@@ -11,5 +11,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "eval", "scripts", "test"]
+  "include": ["src", "eval", "scripts", "test", "test-sandbox"]
 }
