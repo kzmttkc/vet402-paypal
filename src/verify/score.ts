@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import type { ConditionSpec, FieldType, FixedCondition } from "./condition.js";
 import type { LanguageScore } from "./language.js";
 import { valuesAt } from "./paths.js";
@@ -86,7 +85,7 @@ async function loadEmbedder(): Promise<(text: string) => Promise<ArrayLike<numbe
     ) => Promise<(text: string, opts: { pooling: string; normalize: boolean }) => Promise<{ data?: ArrayLike<number> }>>;
     env: { cacheDir: string; allowLocalModels: boolean };
   };
-  mod.env.cacheDir = join(process.cwd(), ".cache", "transformers");
+  mod.env.cacheDir = `${process.cwd()}/.cache/transformers`;
   mod.env.allowLocalModels = false;
   const extractor = await mod.pipeline("feature-extraction", MODEL_ID);
   return async (text: string) => {

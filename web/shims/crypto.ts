@@ -1,6 +1,6 @@
 import { sha256Hex } from "../../src/hash/sha256.js";
 
-/** Browser stand-in for the two `node:crypto` calls the mock rail and the ledger make. */
+/** Browser stand-in for `node:crypto` in the mock rail. The ledger hash is pure JS. */
 export function createHash(algorithm: string): {
   update(data: string): ReturnType<typeof createHash>;
   digest(encoding: "hex"): string;

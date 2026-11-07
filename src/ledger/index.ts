@@ -1,4 +1,6 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../hash/sha256.js";
+
+export { sha256Hex };
 
 export type LedgerEntryType =
   | "allow" // policy allowed the payment decision
@@ -37,10 +39,6 @@ export function canonicalJson(value: unknown): string {
     .filter((k) => obj[k] !== undefined)
     .sort();
   return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`).join(",")}}`;
-}
-
-export function sha256Hex(s: string): string {
-  return createHash("sha256").update(s).digest("hex");
 }
 
 export function entryHash(e: Omit<LedgerEntry, "hash">): string {

@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import type { ConditionSpec, FixedCondition } from "./condition.js";
 import { valuesAt } from "./paths.js";
 import { humanBandScore, instructionShape, type ScoreInput } from "./score.js";
@@ -152,7 +151,7 @@ async function loadAsker(): Promise<(prompt: string) => Promise<string>> {
     >;
     env: { cacheDir: string; allowLocalModels: boolean };
   };
-  mod.env.cacheDir = join(process.cwd(), ".cache", "transformers");
+  mod.env.cacheDir = `${process.cwd()}/.cache/transformers`;
   mod.env.allowLocalModels = false;
   const generator = await mod.pipeline("text-generation", LANGUAGE_MODEL_ID, {
     dtype: LANGUAGE_DTYPE,

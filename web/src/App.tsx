@@ -4,6 +4,7 @@ import type { TruthResult } from "../../src/pay/truth.js";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
+import { pageScoreSource } from "./page-score";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
 import { api } from "./transport";
@@ -447,9 +448,10 @@ export function App({ simulated = false }: { simulated?: boolean }) {
     if (!simulated) return;
     let stop = () => {};
     let cancel = false;
-    void import("./local-score").then(({ subscribePageScore }) => {
-      if (cancel) return;
-      stop = subscribePageScore(setScorePhase);
+    const source = pageScoreSource();
+    if (!source) return;
+    stop = source.subscribe((phase) => {
+      if (!cancel) setScorePhase(phase);
     });
     return () => {
       cancel = true;
