@@ -1,6 +1,6 @@
 # vet402 × PayPal
 
-PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync publishes a physical catalog to an AI and does not cover digital goods ([Store Sync overview](https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview)). Seller Protection also leaves digital goods out ([PayPal Seller Protection](https://www.paypal.com/c2/webapps/mpp/ua/seller-protection)).
+PayPal's agentic commerce describes supervised and automatic shopping. An agent also buys digital deliveries: data, an answer from an API, a report. This work applies the same supervised and automatic idea to those digital deliveries, and captures only after the check.
 
 Pay per truth: one hold on the job, then capture only the records that passed and release the rest.
 Scam my agent: a browser page where a judge sends a fake delivery and sees the outcome, the reason, and $0.00 when it fails.
@@ -44,7 +44,7 @@ day total + amount ≤ dailyCap      month total + amount ≤ monthlyCap
 
 At capture time, expiry, revocation, the authorization's own expiry, and the stop switch are checked again, and the ledger chain is verified.
 
-Autonomy, in PayPal's words: **Supervised** (a person approves every job), **Supervised under a limit** (automatic up to a threshold), **Automatic** (automatic within budget and caps). The threshold, autonomy, caps, seller list, and expiry can only be tightened. The internal ids stay `careful`, `balanced`, and `autopilot`.
+Autonomy, named after PayPal's supervised and automatic modes: **Supervised** (a person approves every job), **Supervised under a limit** (automatic up to a threshold), **Automatic** (automatic within budget and caps). The threshold, autonomy, caps, seller list, and expiry can only be tightened. The internal ids stay `careful`, `balanced`, and `autopilot`.
 
 Amounts are integer cents computed by code from the job plan. The judge's output has no amount field. The scorer returns one number in [0, 1], or nothing.
 
@@ -74,7 +74,7 @@ The buyer's funds stay with PayPal under a standard authorization. This code dec
 
 ## Digital deliveries
 
-PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync is for a physical catalog ([Store Sync overview](https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview)). Seller Protection leaves digital goods out ([PayPal Seller Protection](https://www.paypal.com/c2/webapps/mpp/ua/seller-protection)).
+PayPal's agentic commerce describes supervised and automatic shopping. An agent also buys digital deliveries: data, an answer from an API, a report. This work applies the same supervised and automatic idea to those digital deliveries, and captures only after the check.
 
 A seller with enough paid history, a high shape-match rate, and few errors after payment is held once for the whole job. A new or uncertain seller is held five records at a time: capture what passed, then the next hold. The plan says which, in one line.
 

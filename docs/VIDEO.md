@@ -4,7 +4,7 @@ Under three minutes. English. No music. No extra logos beyond what the screen al
 
 Spoken lines only. Clicks happen under the line, not instead of it.
 
-**0:00** PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync is for physical goods (https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview). Seller Protection leaves digital goods out (https://www.paypal.com/c2/webapps/mpp/ua/seller-protection). Then: Pay per truth. Fifty company records. One hold of fifty dollars. Each line lands pass or fail. The captured counter climbs, and so does the amount released. Thirteen fail. The line reads: Captured $37.00 of $50.00. $13.00 released.
+**0:00** PayPal's agentic commerce describes supervised and automatic shopping. An agent also buys digital deliveries: data, an answer from an API, a report. This work applies the same supervised and automatic idea to those digital deliveries, and captures only after the check. Then: Pay per truth. Fifty company records. One hold of fifty dollars. Each line lands pass or fail. The captured counter climbs, and so does the amount released. Thirteen fail. The line reads: Captured $37.00 of $50.00. $13.00 released.
 
 **0:12** Scam my agent. An empty body. A field of the wrong type. A missing field. A year out of range. An instruction written into the name. A late reply. Send each one. None of them are captured. The amount stays at $0.00.
 
