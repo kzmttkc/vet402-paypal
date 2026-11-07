@@ -66,6 +66,10 @@ The judge's order is HTTP status, then empty, JSON, shape, values, latency, then
 
 The buyer's funds stay with PayPal under a standard authorization. This code decides whether to capture, void, or ask a person, and keeps a hash-chained record of why. It does not lock tokens in a contract.
 
+## Digital deliveries
+
+PayPal's Seller Protection does not cover digital goods ([PayPal Seller Protection](https://www.paypal.com/c2/webapps/mpp/ua/seller-protection)). An agent buys a digital delivery, so this program extends that check-then-pay protection to what the machine receives. A seller with enough paid history, a high shape-match rate, and few errors after payment is held once for the whole job. A new or uncertain seller is held five records at a time: capture what passed, then the next hold. The approval card says which, in one line.
+
 ## x402 auth-capture and PayPal Orders
 
 The x402 column follows the auth-capture page at <https://docs.x402r.org/x402-integration/auth-capture> as it read on 2026-11-07. That page's default path (`autoCapture: false`) locks tokens in `AuthCaptureEscrow`. This program does not call that contract. The PayPal column is what `src/rail/sandbox.ts` calls: Orders v2 and Payments v2, `intent=AUTHORIZE`.

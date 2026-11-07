@@ -10,7 +10,8 @@ import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
 import { defaultScorerFor, type Outcome, type Scorer } from "../verify/judge.js";
 import { isScamKind, judgeScam, scamScorer, type ScamResult, type ScamWin } from "../demo/scam.js";
 import { deliveryFor, type DeliveryMode } from "./deliveries.js";
-import { settlePayPerTruth, TRUTH_COUNT, TRUTH_HOLD_CENTS, TRUTH_PASSED, type TruthResult } from "../pay/truth.js";
+import { recordPrices, settlePayPerTruth, TRUTH_COUNT, TRUTH_HOLD_CENTS, TRUTH_PASSED, type TruthResult } from "../pay/truth.js";
+import { creditPlan, slicesOf, type CreditPlan } from "../sellers/credit.js";
 
 const DAY = 86_400_000;
 const BALANCED_AUTO_MAX = 5_000;
@@ -44,6 +45,7 @@ export interface JobView {
   capturedCents: number;
   releasedCents: number;
   holdQuestion: string;
+  holdReason: string;
   summary: string;
   orderId: string | null;
   authorizationId: string | null;
@@ -92,12 +94,22 @@ interface Sample {
   decision: "open" | "capture" | "void";
 }
 
+interface Line {
+  itemId: string;
+  label: string;
+  priceCents: number;
+}
+
 interface Planned {
   jobId: string;
   brief: string;
   autonomy: Autonomy;
   budgetCents: number;
-  items: { itemId: string; label: string; priceCents: number }[];
+  items: Line[];
+  records: { itemId: string; priceCents: number }[];
+  seller: SellerStats;
+  credit: CreditPlan;
+  approver: string;
   engine: PaymentEngine | null;
 }
 
@@ -153,6 +165,7 @@ export class Desk {
   readonly railName: string;
   readonly seller: SellerStats;
   readonly conditionId: string;
+  private readonly sellers: ReadonlyMap<string, SellerStats>;
   private readonly rail: PayPalRail;
   private readonly now: () => number;
   private readonly conditions = new ConditionRegistry();
@@ -178,6 +191,7 @@ export class Desk {
     this.scorer = opts.scorer;
     this.onScamWin = opts.onScamWin;
     const sellers = opts.sellers ?? aggregateSellers(loadFrozenExport().rows);
+    this.sellers = sellers;
     this.seller = pickSeller(sellers);
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
     this.samples = [
@@ -191,15 +205,20 @@ export class Desk {
     return this.stopped;
   }
 
-  plan(input: { brief: string; budgetCents: number; autonomy: Autonomy }): JobView {
-    const job: Planned = {
+  plan(input: { brief: string; budgetCents: number; autonomy: Autonomy; seller?: "established" | "new" }): JobView {
+    const seller = input.seller === "new" ? this.newSeller() : this.seller;
+    const records = input.seller === "new" ? pricedRecords(input.budgetCents, 25) : splitBudget(input.budgetCents);
+    const credit = creditPlan(seller, records.length);
+    const items = credit.parts === 1 ? records : partLines(records, credit.partSize);
+    const job = this.finishPlan({
       jobId: `job_${randomUUID()}`,
       brief: input.brief,
       autonomy: input.autonomy,
       budgetCents: input.budgetCents,
-      items: splitBudget(input.budgetCents),
-      engine: null,
-    };
+      items,
+      records,
+      seller,
+    });
     this.jobs.set(job.jobId, job);
     return this.view(job);
   }
@@ -208,11 +227,16 @@ export class Desk {
     if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
     const job = this.must(jobId);
     if (job.engine) return this.view(job);
+    job.approver = approver;
     const engine = this.openEngine(job);
     job.engine = engine;
+    if (job.credit.parts > 1) {
+      await this.authorizeSlice(job, 0);
+      return this.view(job);
+    }
     let result = await engine.requestJob({
       jobId: job.jobId,
-      sellerId: this.seller.resourceKey,
+      sellerId: job.seller.resourceKey,
       conditionId: this.conditionId,
       items: job.items.map((i) => ({ itemId: i.itemId, priceCents: i.priceCents })),
     });
@@ -227,6 +251,20 @@ export class Desk {
     const job = this.must(jobId);
     if (!job.engine) throw new DeskError(409, "place the hold first");
     const delivery = deliveryFor(mode);
+    if (job.credit.parts > 1) {
+      for (let i = 0; i < job.credit.parts; i++) {
+        const id = `${job.jobId}:${i + 1}`;
+        if (!job.engine.job(id)) await this.authorizeSlice(job, i);
+        const snap = job.engine.job(id);
+        if (!snap || (snap.status !== "authorized" && snap.status !== "needs_human")) continue;
+        const slice = slicesOf(job.records, job.credit.partSize)[i] ?? [];
+        const deliveries: Record<string, ReturnType<typeof deliveryFor>> = {};
+        for (const item of slice) deliveries[item.itemId] = delivery;
+        const settled = await job.engine.settle(id, deliveries);
+        if (settled.status === "needs_human") break;
+      }
+      return this.view(job);
+    }
     const deliveries: Record<string, ReturnType<typeof deliveryFor>> = {};
     for (const item of job.items) deliveries[item.itemId] = delivery;
     await job.engine.settle(job.jobId, deliveries);
@@ -238,14 +276,13 @@ export class Desk {
     if (!isScamKind(kind)) throw new DeskError(400, "kind must be a prepared scam");
     if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
     const jobId = `scam_${randomUUID()}`;
-    const job: Planned = {
+    const job = this.finishPlan({
       jobId,
       brief: "Scam my agent",
       autonomy: "autopilot",
       budgetCents: 100,
       items: [{ itemId: "delivery", label: "One delivery", priceCents: 100 }],
-      engine: null,
-    };
+    });
     const base = this.scorer ?? defaultScorerFor(this.conditions.get(this.conditionId));
     const engine = this.openEngine(job, scamScorer(base));
     job.engine = engine;
@@ -269,7 +306,7 @@ export class Desk {
   async payPerTruth(): Promise<TruthResult> {
     if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
     const jobId = `truth_${randomUUID()}`;
-    const job: Planned = {
+    const job = this.finishPlan({
       jobId,
       brief: "50 company records",
       autonomy: "autopilot",
@@ -279,8 +316,7 @@ export class Desk {
         label: `Record ${i + 1}`,
         priceCents: Math.floor(TRUTH_HOLD_CENTS / TRUTH_COUNT),
       })),
-      engine: null,
-    };
+    });
     const engine = this.openEngine(job);
     job.engine = engine;
     this.jobs.set(jobId, job);
@@ -419,7 +455,7 @@ export class Desk {
       policy: new PolicyStore({
         id: job.jobId,
         budgetCents: job.budgetCents,
-        allowedSellers: [this.seller.resourceKey],
+        allowedSellers: [job.seller.resourceKey],
         expiresAt: this.now() + 7 * DAY,
         revoked: false,
         autonomy: job.autonomy,
@@ -440,26 +476,81 @@ export class Desk {
     return job;
   }
 
+  private newSeller(): SellerStats {
+    const found = [...this.sellers.values()]
+      .filter((seller) => seller.settled === 0)
+      .sort((a, b) => a.resourceKey.localeCompare(b.resourceKey))[0];
+    if (!found) throw new DeskError(409, "the export has no new seller");
+    return found;
+  }
+
+  private finishPlan(
+    job: Omit<Planned, "records" | "seller" | "credit" | "approver" | "engine"> & {
+      seller?: SellerStats;
+      records?: Planned["records"];
+    },
+  ): Planned {
+    const seller = job.seller ?? this.seller;
+    const records = job.records ?? job.items.map((item) => ({ itemId: item.itemId, priceCents: item.priceCents }));
+    return { ...job, seller, records, credit: creditPlan(seller, records.length), approver: "buyer", engine: null };
+  }
+
+  private async authorizeSlice(job: Planned, index: number): Promise<void> {
+    const engine = job.engine;
+    if (!engine) throw new DeskError(409, "place the hold first");
+    const slice = slicesOf(job.records, job.credit.partSize)[index];
+    if (!slice) return;
+    const id = `${job.jobId}:${index + 1}`;
+    if (engine.job(id)) return;
+    let result = await engine.requestJob({
+      jobId: id,
+      sellerId: job.seller.resourceKey,
+      conditionId: this.conditionId,
+      items: slice.map((item) => ({ itemId: item.itemId, priceCents: item.priceCents })),
+    });
+    if (result.status === "pending_human") result = await engine.approveJob(id, job.approver);
+    if (result.status === "denied") {
+      throw new DeskError(409, result.reasons.join(", ") || "refused before PayPal was called");
+    }
+  }
+
+  private snaps(job: Planned) {
+    if (!job.engine) return [];
+    if (job.credit.parts === 1) {
+      const one = job.engine.job(job.jobId);
+      return one ? [one] : [];
+    }
+    const out = [];
+    for (let i = 0; i < job.credit.parts; i++) {
+      const snap = job.engine.job(`${job.jobId}:${i + 1}`);
+      if (snap) out.push(snap);
+    }
+    return out;
+  }
+
   private view(job: Planned): JobView {
-    const snap = job.engine?.job(job.jobId);
-    const status: JobStatus | "planned" = snap?.status ?? "planned";
-    const captured = snap?.capturedCents ?? 0;
+    const snaps = this.snaps(job);
+    const status = combinedStatus(job, snaps, this.stopped);
+    const captured = snaps.reduce((sum, snap) => sum + snap.capturedCents, 0);
+    const last = snaps.at(-1);
     const spec = this.conditions.get(this.conditionId).spec;
+    const single = snaps[0];
     return {
       jobId: job.jobId,
       brief: job.brief,
       autonomy: job.autonomy,
       status,
-      sellerId: this.seller.resourceKey,
-      sellerLine: approvalSentence(this.seller),
+      sellerId: job.seller.resourceKey,
+      sellerLine: approvalSentence(job.seller),
       holdCents: job.budgetCents,
       capturedCents: captured,
       releasedCents: status === "captured" ? job.budgetCents - captured : status === "voided" ? job.budgetCents : 0,
       holdQuestion: `May I place a hold of ${formatUsd(job.budgetCents)} until each delivery checks out?`,
+      holdReason: job.credit.reason,
       summary: summaryOf(status, job.budgetCents, captured),
-      orderId: snap?.orderId ?? null,
-      authorizationId: snap?.authorizationId ?? null,
-      captureId: snap?.captureId ?? null,
+      orderId: last?.orderId ?? null,
+      authorizationId: last?.authorizationId ?? null,
+      captureId: last?.captureId ?? null,
       conditionId: this.conditionId,
       condition: {
         description: spec.description,
@@ -468,13 +559,58 @@ export class Desk {
         formats: spec.patterns ?? {},
         score: { passAt: spec.ai.passAt, voidBelow: spec.ai.voidBelow },
       },
-      items: job.items.map((item) => ({
+      items: job.items.map((item, index) => ({
         itemId: item.itemId,
         label: item.label,
         priceCents: item.priceCents,
         price: formatUsd(item.priceCents),
-        progress: progressOf(snap?.outcomes[item.itemId]),
+        progress: itemProgress(job, item.itemId, index, single),
       })),
     };
   }
+}
+
+function pricedRecords(cents: number, count: number): Line[] {
+  return recordPrices(cents, count).map((priceCents, i) => ({
+    itemId: `rec-${String(i + 1).padStart(2, "0")}`,
+    label: `Record ${i + 1}`,
+    priceCents,
+  }));
+}
+
+function partLines(records: { itemId: string; priceCents: number }[], partSize: number): Line[] {
+  return slicesOf(records, partSize).map((slice, i) => ({
+    itemId: `part-${i + 1}`,
+    label: `Part ${i + 1} · ${slice.length} records`,
+    priceCents: slice.reduce((sum, item) => sum + item.priceCents, 0),
+  }));
+}
+
+function combinedStatus(
+  job: Planned,
+  snaps: { status: JobStatus }[],
+  stopped: boolean,
+): JobStatus | "planned" {
+  if (snaps.length === 0) return "planned";
+  if (snaps.some((snap) => snap.status === "needs_human")) return "needs_human";
+  if (snaps.some((snap) => snap.status === "pending_human")) return "pending_human";
+  if (snaps.some((snap) => snap.status === "authorized")) return "authorized";
+  if (snaps.length < job.credit.parts && !stopped) return "authorized";
+  if (snaps.some((snap) => snap.status === "captured")) return "captured";
+  if (snaps.every((snap) => snap.status === "voided")) return "voided";
+  return snaps.at(-1)!.status;
+}
+
+function itemProgress(
+  job: Planned,
+  itemId: string,
+  index: number,
+  single: { outcomes: Record<string, Outcome>; status: JobStatus } | undefined,
+): string {
+  if (job.credit.parts === 1) return progressOf(single?.outcomes[itemId]);
+  const snap = job.engine?.job(`${job.jobId}:${index + 1}`);
+  if (snap?.status === "captured") return "PASS → captured";
+  if (snap?.status === "voided") return "FAIL → voided";
+  if (snap?.status === "needs_human") return "UNSURE → human";
+  return "waiting";
 }

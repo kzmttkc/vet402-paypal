@@ -24,6 +24,7 @@ export interface JobView {
   holdCents: number;
   capturedCents: number;
   holdQuestion: string;
+  holdReason: string;
   summary: string;
   orderId: string | null;
   authorizationId: string | null;

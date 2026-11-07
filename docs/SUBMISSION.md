@@ -21,6 +21,8 @@ It places one PayPal authorization for a data job. It buys from a seller whose p
 
 Each delivery is checked in code: HTTP status, empty body, JSON, shape, values, latency, then one score in [0, 1]. Capture keeps the part that passed and releases the rest (`final_capture=true`). A total miss is a void. Late, an unsure score, or an instruction inside a declared field goes to a person. The buyer's funds stay at PayPal. This program does not hold them.
 
+PayPal's Seller Protection does not cover digital goods (PayPal, https://www.paypal.com/c2/webapps/mpp/ua/seller-protection). An agent buys a digital delivery, so the same check-then-pay protection is what the machine receives. A seller with a strong paid history is authorized once for the job. A new or uncertain seller is authorized five records at a time.
+
 ## How I built it
 
 The rail is PayPal Orders v2 and Payments v2 with `intent=AUTHORIZE`: create the order, authorize, capture or void the authorization, refund a capture. The same calls exist on an in-memory mock. `npm test` uses the mock and opens no network.

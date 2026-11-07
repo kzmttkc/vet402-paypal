@@ -21,8 +21,28 @@ export const DEMO_SELLER: SellerStats = {
   postPayErrorRate: 0,
 };
 
+/**
+ * First resource_key in the frozen export with no paid purchase
+ * (localeCompare order, counted 2026-11-07). The static page does not read the CSV.
+ */
+export const DEMO_NEW_SELLER: SellerStats = {
+  resourceKey: "10x402.com/lint",
+  attempts: 1,
+  settled: 0,
+  paid2xx: 0,
+  paid4xx: 0,
+  paid5xx: 0,
+  shapeMatch: 0,
+  shapeMismatch: 0,
+  shapeMatchRate: null,
+  postPayErrorRate: null,
+};
+
 export function demoSellers(): Map<string, SellerStats> {
-  return new Map([[DEMO_SELLER.resourceKey, DEMO_SELLER]]);
+  return new Map([
+    [DEMO_SELLER.resourceKey, DEMO_SELLER],
+    [DEMO_NEW_SELLER.resourceKey, DEMO_NEW_SELLER],
+  ]);
 }
 
 /** Mock rail, judge, and ledger in memory. No files, no network, no keys. */

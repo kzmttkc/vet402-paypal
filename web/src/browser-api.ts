@@ -32,7 +32,9 @@ async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknow
     if (typeof body.autonomy !== "string" || !AUTONOMY.includes(body.autonomy as Autonomy)) {
       return fail("Autonomy must be careful, balanced, or autopilot.");
     }
-    return desk.plan({ brief: body.brief.trim(), budgetCents: body.budgetCents, autonomy: body.autonomy as Autonomy });
+    const seller = body.seller === undefined || body.seller === "established" ? "established" : body.seller === "new" ? "new" : "";
+    if (!seller) return fail("Seller must be established or new.");
+    return desk.plan({ brief: body.brief.trim(), budgetCents: body.budgetCents, autonomy: body.autonomy as Autonomy, seller });
   }
 
   const approve = /^\/api\/jobs\/([^/]+)\/approve$/.exec(path);

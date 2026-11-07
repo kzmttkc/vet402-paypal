@@ -251,6 +251,9 @@ function Slip({ job, copy, onHold, busy }: { job: JobView; copy: Copy; onHold: (
       <p className="ask" data-testid="approval-hold-question">
         {job.holdQuestion}
       </p>
+      <p className="hold-reason" data-testid="approval-hold-reason">
+        {job.holdReason}
+      </p>
       {job.status === "planned" && (
         <button type="button" className="yes" onClick={onHold} disabled={busy}>
           {copy.placeHold}
@@ -397,6 +400,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [brief, setBrief] = useState(copy.sampleBrief);
   const [budget, setBudget] = useState<Budget>(5000);
   const [autonomy, setAutonomy] = useState<Autonomy>("careful");
+  const [sellerMode, setSellerMode] = useState<"established" | "new">("established");
   const [job, setJob] = useState<JobView | null>(null);
   const [demo, setDemo] = useState<{ left: JobView; right: JobView } | null>(null);
   const [truth, setTruth] = useState<TruthResult | null>(null);
@@ -607,7 +611,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
           onSubmit={(event) => {
             event.preventDefault();
             void run(async () => {
-              const next = await api<JobView>("/api/jobs", { brief, budgetCents: budget, autonomy });
+              const next = await api<JobView>("/api/jobs", { brief, budgetCents: budget, autonomy, seller: sellerMode });
               setJob(next);
             });
           }}
@@ -632,6 +636,19 @@ export function App({ simulated = false }: { simulated?: boolean }) {
                   <span>{b.label}</span>
                 </label>
               ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>{copy.sellerChoice}</legend>
+            <div className="choices">
+              <label>
+                <input type="radio" name="seller" value="established" checked={sellerMode === "established"} onChange={() => setSellerMode("established")} />
+                <span>{copy.sellerEstablished}</span>
+              </label>
+              <label>
+                <input type="radio" name="seller" value="new" checked={sellerMode === "new"} onChange={() => setSellerMode("new")} />
+                <span>{copy.sellerNew}</span>
+              </label>
             </div>
           </fieldset>
           <fieldset>

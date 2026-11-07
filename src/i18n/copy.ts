@@ -64,6 +64,9 @@ export interface Copy {
   ranges: string;
   score: string;
   seller: string;
+  sellerChoice: string;
+  sellerEstablished: string;
+  sellerNew: string;
   placeHold: string;
   order: string;
   authorization: string;
@@ -161,6 +164,9 @@ const EN: Copy = {
   ranges: "Ranges",
   score: "Score",
   seller: "This seller",
+  sellerChoice: "Whose record",
+  sellerEstablished: "Established seller",
+  sellerNew: "New seller",
   placeHold: "Place the hold",
   order: "Order",
   authorization: "Authorization",
@@ -257,6 +263,9 @@ const JA: Copy = {
   ranges: "範囲",
   score: "採点",
   seller: "この売り手",
+  sellerChoice: "どちらの実績",
+  sellerEstablished: "実績のある売り手",
+  sellerNew: "初めての売り手",
   placeHold: "与信を置く",
   order: "注文",
   authorization: "与信 ID",
@@ -388,6 +397,15 @@ export function presentDecision(lang: Lang, decision: string): string {
   return DECISIONS[decision] ?? decision;
 }
 
+export function presentHoldReason(lang: Lang, reason: string): string {
+  if (lang === "en") return reason;
+  if (reason === "Established seller: one hold for the whole job") return "実績のある売り手: 仕事全体を1回で与信します";
+  const match = /^(New seller|Uncertain seller): holding in (\d+) parts?$/.exec(reason);
+  if (!match) return reason;
+  const who = match[1] === "New seller" ? "初めての売り手" : "実績の少ない売り手";
+  return `${who}: ${match[2]}回に分けて与信します`;
+}
+
 export interface ShownJob {
   status: string;
   holdCents: number;
@@ -395,6 +413,7 @@ export interface ShownJob {
   summary: string;
   sellerLine: string;
   holdQuestion: string;
+  holdReason?: string;
   condition: { description: string };
   items: { label: string; progress: string; price: string }[];
 }
@@ -420,7 +439,7 @@ export function presentHoldQuestion(lang: Lang, holdCents: number, english: stri
 /** Translate the words around a job. Prices, ids, and the English view stay as they are. */
 export function screenJob<T extends ShownJob>(job: T, lang: Lang): T {
   if (lang === "en") return job;
-  return {
+  const next = {
     ...job,
     sellerLine: presentSellerLine(lang, job.sellerLine),
     holdQuestion: presentHoldQuestion(lang, job.holdCents, job.holdQuestion),
@@ -432,6 +451,8 @@ export function screenJob<T extends ShownJob>(job: T, lang: Lang): T {
       progress: PROGRESS[item.progress] ?? item.progress,
     })),
   };
+  if (typeof job.holdReason === "string") next.holdReason = presentHoldReason(lang, job.holdReason);
+  return next;
 }
 
 const ERRORS: Record<string, string> = {

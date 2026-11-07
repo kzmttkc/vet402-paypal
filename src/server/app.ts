@@ -27,7 +27,7 @@ async function readJson(c: { req: { json: () => Promise<unknown> } }): Promise<u
   }
 }
 
-function parsePlan(body: unknown): { brief: string; budgetCents: number; autonomy: Autonomy } | string {
+function parsePlan(body: unknown): { brief: string; budgetCents: number; autonomy: Autonomy; seller: "established" | "new" } | string {
   if (!isRecord(body)) return "Send a JSON object with brief, budgetCents, and autonomy.";
   if (typeof body.brief !== "string" || body.brief.trim().length === 0 || body.brief.trim().length > 280) {
     return "Describe the job in 1–280 characters.";
@@ -38,7 +38,9 @@ function parsePlan(body: unknown): { brief: string; budgetCents: number; autonom
   if (typeof body.autonomy !== "string" || !AUTONOMY.includes(body.autonomy as Autonomy)) {
     return "Autonomy must be careful, balanced, or autopilot.";
   }
-  return { brief: body.brief.trim(), budgetCents: body.budgetCents, autonomy: body.autonomy as Autonomy };
+  const seller = body.seller === undefined || body.seller === "established" ? "established" : body.seller === "new" ? "new" : "";
+  if (!seller) return "Seller must be established or new.";
+  return { brief: body.brief.trim(), budgetCents: body.budgetCents, autonomy: body.autonomy as Autonomy, seller };
 }
 
 export function createApp(opts: AppOptions = {}): Hono {
