@@ -127,33 +127,54 @@ export class PaymentEngine {
   }
 
   /** A person approved a job that the autonomy level held back. Policy is checked again. */
-  async approveJob(jobId: string, approver: string): Promise<JobResult> {
+  async approveJob(jobId: string, approver: string, opts?: { buyerApproved?: boolean }): Promise<JobResult> {
     const job = this.mustJob(jobId);
     if (job.status !== "pending_human") return this.result(job);
+    if (opts?.buyerApproved && !job.orderId) throw new Error("PayPal has no order to approve");
     if (this.killSwitch.engaged) return this.deny(job, ["emergency_stop"], "authorize");
     const d = canPay(this.policy.mandate, { sellerId: job.req.sellerId, amountCents: job.amountCents }, this.now(), this.book);
     if (!d.ok) return this.deny(job, d.reasons, "authorize");
     this.ledger.append("allow", jobId, { by: "human", approver, amountCents: job.amountCents });
-    return this.authorize(job);
+    return this.authorize(job, opts);
   }
 
-  private async authorize(job: Job): Promise<JobResult> {
+  /**
+   * Create the order for a job that is waiting on a person, and do not authorize it.
+   * PayPal's button opens the approval screen with this id. Calling it again returns the same id.
+   */
+  async stageBuyerOrder(jobId: string): Promise<string> {
+    const job = this.mustJob(jobId);
+    if (job.status !== "pending_human") throw new Error("buyer approval is only for a job waiting on a person");
+    if (job.orderId) return job.orderId;
+    if (this.killSwitch.engaged) throw new Error("emergency stop is on");
+    const order = await this.rail.createOrder(
+      { intent: "AUTHORIZE", amountCents: job.amountCents, currency: "USD", payeeId: job.req.sellerId, referenceId: jobId },
+      `${jobId}:create`,
+    );
+    job.orderId = order.id;
+    this.ledger.append("allow", jobId, { by: "paypal_button", orderId: order.id, amountCents: job.amountCents });
+    return order.id;
+  }
+
+  private async authorize(job: Job, opts?: { buyerApproved?: boolean }): Promise<JobResult> {
     const id = job.req.jobId;
     try {
       if (this.killSwitch.engaged) return this.deny(job, ["emergency_stop"], "authorize");
-      const order = await this.rail.createOrder(
-        { intent: "AUTHORIZE", amountCents: job.amountCents, currency: "USD", payeeId: job.req.sellerId, referenceId: id },
-        `${id}:create`,
-      );
-      job.orderId = order.id;
+      if (!job.orderId) {
+        const order = await this.rail.createOrder(
+          { intent: "AUTHORIZE", amountCents: job.amountCents, currency: "USD", payeeId: job.req.sellerId, referenceId: id },
+          `${id}:create`,
+        );
+        job.orderId = order.id;
+      }
       if (this.killSwitch.engaged) return this.deny(job, ["emergency_stop"], "authorize");
-      const auth = await this.rail.authorize(order.id, `${id}:authorize`);
+      const auth = await this.rail.authorize(job.orderId, `${id}:authorize`, opts?.buyerApproved ? { buyerApproved: true } : undefined);
       job.authorizationId = auth.id;
       job.authExpiresAt = auth.expiresAt;
       job.status = "authorized";
       this.book.hold(id, job.amountCents, this.now());
       this.ledger.append("authorize", id, {
-        orderId: order.id,
+        orderId: job.orderId,
         authorizationId: auth.id,
         amountCents: job.amountCents,
         expiresAt: auth.expiresAt,

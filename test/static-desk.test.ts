@@ -51,6 +51,8 @@ describe("static demo", () => {
     const api = createBrowserTransport();
     const health = await api<{ rail: string; stopped: boolean }>("/api/health");
     expect(health).toEqual({ ok: true, rail: "mock", stopped: false });
+    const sdk = await api<{ sdk: string; clientId: null; mode: string }>("/api/paypal-sdk");
+    expect(sdk).toEqual({ sdk: "v6", script: null, clientId: null, mode: "mock" });
     const played = await api<{ left: { status: string }; right: { status: string } }>("/api/demo", { budgetCents: 5_000 });
     expect(played.left.status).toBe("captured");
     expect(played.right.status).toBe("voided");

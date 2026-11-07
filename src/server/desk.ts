@@ -4,7 +4,7 @@ import { Ledger, type JsonValue } from "../ledger/index.js";
 import { PaymentEngine, type JobStatus } from "../engine/index.js";
 import { formatUsd } from "../policy/money.js";
 import { PolicyStore, type Autonomy } from "../policy/mandate.js";
-import type { PayPalRail } from "../rail/types.js";
+import { RailError, type PayPalRail } from "../rail/types.js";
 import { aggregateSellers, approvalSentence, jobKindFromBrief, loadFrozenExport, pickSellerFor, SAMPLE_SELLER_LINE, type SellerStats } from "../sellers/index.js";
 import { ConditionRegistry, type ConditionSpec } from "../verify/condition.js";
 import { defaultScorerFor, type Outcome, type Scorer } from "../verify/judge.js";
@@ -232,11 +232,55 @@ export class Desk {
     return this.view(job);
   }
 
-  async approve(jobId: string, approver = "buyer"): Promise<JobView> {
+  /**
+   * Open a PayPal order for the button, without authorizing it.
+   * Automatic levels that already held the money return `alreadyHeld` and do not open a second order.
+   */
+  async stagePaypalOrder(jobId: string): Promise<{ orderId: string | null; alreadyHeld: boolean }> {
     if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
     const job = this.must(jobId);
-    if (job.engine) return this.view(job);
+    if (job.credit.parts > 1) throw new DeskError(409, "a split hold stays on this page's own approval");
+    if (!job.engine) {
+      job.engine = this.openEngine(job);
+      const result = await job.engine.requestJob({
+        jobId: job.jobId,
+        sellerId: job.seller.resourceKey,
+        conditionId: this.conditionId,
+        items: job.items.map((item) => ({ itemId: item.itemId, priceCents: item.priceCents })),
+      });
+      if (result.status === "denied") {
+        throw new DeskError(409, result.reasons.join(", ") || "refused before PayPal was called");
+      }
+      if (result.status === "authorized") {
+        return { orderId: job.engine.job(job.jobId)?.orderId ?? null, alreadyHeld: true };
+      }
+      if (result.status !== "pending_human") throw new DeskError(409, "this job is not waiting for approval");
+    }
+    const snap = job.engine.job(job.jobId);
+    if (snap?.status === "authorized") return { orderId: snap.orderId, alreadyHeld: true };
+    if (snap?.status !== "pending_human") throw new DeskError(409, "this job is not waiting for approval");
+    try {
+      const orderId = await job.engine.stageBuyerOrder(job.jobId);
+      return { orderId, alreadyHeld: false };
+    } catch (e) {
+      if (e instanceof RailError) throw new DeskError(409, e.code);
+      throw e;
+    }
+  }
+
+  async approve(jobId: string, approver = "buyer", opts?: { buyerApproved?: boolean }): Promise<JobView> {
+    if (this.stopped) throw new DeskError(409, "emergency stop is on; new holds are refused");
+    const job = this.must(jobId);
     job.approver = approver;
+    if (opts?.buyerApproved) {
+      if (!job.engine) throw new DeskError(409, "open the PayPal order before approving");
+      const result = await job.engine.approveJob(job.jobId, approver, { buyerApproved: true });
+      if (result.status === "denied") {
+        throw new DeskError(409, result.reasons.join(", ") || "refused before PayPal was called");
+      }
+      return this.view(job);
+    }
+    if (job.engine) return this.view(job);
     const engine = this.openEngine(job);
     job.engine = engine;
     if (job.credit.parts > 1) {

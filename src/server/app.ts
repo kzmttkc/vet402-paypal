@@ -11,6 +11,28 @@ import type { DeliveryMode } from "./deliveries.js";
 export interface AppOptions {
   rail?: PayPalRail;
   now?: () => number;
+  /** When set, the public button config comes from here instead of the process environment. */
+  paypal?: { clientId?: string; clientSecret?: string; env?: string };
+}
+
+export interface PaypalButtonConfig {
+  sdk: "v6";
+  script: string | null;
+  clientId: string | null;
+  mode: "sandbox" | "mock";
+}
+
+/** Client id only. The secret is never copied into this object. */
+export function paypalButtonConfig(source: { clientId?: string; env?: string }): PaypalButtonConfig {
+  const clientId = (source.clientId ?? "").trim();
+  const env = (source.env ?? "mock").trim().toLowerCase();
+  const sandbox = env === "sandbox" && clientId.length > 0;
+  return {
+    sdk: "v6",
+    script: sandbox ? "https://www.sandbox.paypal.com/web-sdk/v6/core" : null,
+    clientId: sandbox ? clientId : null,
+    mode: sandbox ? "sandbox" : "mock",
+  };
 }
 
 const AUTONOMY: readonly Autonomy[] = ["careful", "balanced", "autopilot"];
@@ -66,6 +88,16 @@ export function createApp(opts: AppOptions = {}): Hono {
 
   app.get("/api/health", (c) => c.json({ ok: true, rail: desk.railName, stopped: desk.isStopped, model: modelPhase() }));
 
+  app.get("/api/paypal-sdk", (c) => {
+    const fromOpts = opts.paypal;
+    const config = paypalButtonConfig(
+      fromOpts
+        ? { clientId: fromOpts.clientId, env: fromOpts.env }
+        : { clientId: process.env.PAYPAL_CLIENT_ID, env: process.env.PAYPAL_ENV },
+    );
+    return c.json(config);
+  });
+
   app.post("/api/jobs", async (c) => {
     const parsed = parsePlan(await readJson(c));
     if (typeof parsed === "string") return c.json({ error: parsed }, 400);
@@ -74,12 +106,15 @@ export function createApp(opts: AppOptions = {}): Hono {
 
   app.get("/api/jobs/:jobId", (c) => c.json(desk.job(c.req.param("jobId"))));
 
+  app.post("/api/jobs/:jobId/paypal-order", async (c) => c.json(await desk.stagePaypalOrder(c.req.param("jobId"))));
+
   app.post("/api/jobs/:jobId/approve", async (c) => {
     const body = await readJson(c);
     const approver = isRecord(body) && typeof body.approver === "string" && body.approver.trim().length > 0 && body.approver.length <= 80
       ? body.approver.trim()
       : "buyer";
-    return c.json(await desk.approve(c.req.param("jobId"), approver));
+    const buyerApproved = isRecord(body) && body.buyerApproved === true;
+    return c.json(await desk.approve(c.req.param("jobId"), approver, buyerApproved ? { buyerApproved: true } : undefined));
   });
 
   app.post("/api/jobs/:jobId/settle", async (c) => {

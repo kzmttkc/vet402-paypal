@@ -19,6 +19,9 @@ function fail(message: string): never {
 
 async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknown> {
   if (path === "/api/health") return { ok: true, rail: desk.railName, stopped: desk.isStopped };
+  if (path === "/api/paypal-sdk" && body === undefined) {
+    return { sdk: "v6", script: null, clientId: null, mode: "mock" };
+  }
   if (path === "/api/review" && body === undefined) return desk.review();
   if (path === "/api/activity" && body === undefined) return desk.activity();
   if (path === "/api/jobs" && body !== undefined) {
@@ -37,12 +40,20 @@ async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknow
     return desk.plan({ brief: body.brief.trim(), budgetCents: body.budgetCents, autonomy: body.autonomy as Autonomy, seller });
   }
 
+  const paypalOrder = /^\/api\/jobs\/([^/]+)\/paypal-order$/.exec(path);
+  if (paypalOrder && body !== undefined) return desk.stagePaypalOrder(decodeURIComponent(paypalOrder[1] ?? ""));
+
   const approve = /^\/api\/jobs\/([^/]+)\/approve$/.exec(path);
   if (approve && body !== undefined) {
     const approver = isRecord(body) && typeof body.approver === "string" && body.approver.trim().length > 0 && body.approver.length <= 80
       ? body.approver.trim()
       : "buyer";
-    return desk.approve(decodeURIComponent(approve[1] ?? ""), approver);
+    const buyerApproved = isRecord(body) && body.buyerApproved === true;
+    return desk.approve(
+      decodeURIComponent(approve[1] ?? ""),
+      approver,
+      buyerApproved ? { buyerApproved: true } : undefined,
+    );
   }
 
   const settle = /^\/api\/jobs\/([^/]+)\/settle$/.exec(path);

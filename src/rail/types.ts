@@ -104,7 +104,11 @@ export class RailError extends Error {
 export interface PayPalRail {
   readonly name: string;
   createOrder(input: CreateOrderInput, requestId: string): Promise<Order>;
-  authorize(orderId: string, requestId: string): Promise<Authorization>;
+  /**
+   * `buyerApproved` means the buyer already approved this order in PayPal's own screen,
+   * so the call must not attach a server-side card.
+   */
+  authorize(orderId: string, requestId: string, opts?: { buyerApproved?: boolean }): Promise<Authorization>;
   capture(
     authorizationId: string,
     amountCents: Cents,

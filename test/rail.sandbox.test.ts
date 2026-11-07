@@ -241,6 +241,16 @@ describe("sandbox PayPal rail (offline, fake PayPal)", () => {
     expect(f.seen.find((s) => s.path === "/v1/oauth2/token")!.body).toBe("grant_type=client_credentials");
   });
 
+  it("a buyer who already approved in PayPal's screen is not charged with the server card", async () => {
+    const f = fakePayPal();
+    const r = rail(f);
+    const o = await r.createOrder({ intent: "AUTHORIZE", amountCents: 500, currency: "USD", payeeId: "s", referenceId: "r" }, "k-buyer");
+    const e = await r.authorize(o.id, "k-buyer-auth", { buyerApproved: true }).catch((x: unknown) => x);
+    expect((e as PayPalApiError).issue).toBe("ORDER_NOT_APPROVED");
+    const sent = f.seen.find((s) => s.path.endsWith("/authorize"));
+    expect(sent?.body).toEqual({});
+  });
+
   it("without a payment source, authorize needs a buyer-approved order", async () => {
     const r = rail(fakePayPal(), { paymentSource: undefined });
     const o = await r.createOrder({ intent: "AUTHORIZE", amountCents: 500, currency: "USD", payeeId: "s", referenceId: "r" }, "k-c");

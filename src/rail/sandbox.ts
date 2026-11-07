@@ -172,8 +172,8 @@ export class SandboxPayPalRail implements PayPalRail {
     return { order: this.toOrder(raw), approveUrl: String(link.href) };
   }
 
-  async authorize(orderId: string, requestId: string): Promise<Authorization> {
-    const body = this.config.paymentSource ? { payment_source: this.config.paymentSource } : {};
+  async authorize(orderId: string, requestId: string, opts?: { buyerApproved?: boolean }): Promise<Authorization> {
+    const body = opts?.buyerApproved || !this.config.paymentSource ? {} : { payment_source: this.config.paymentSource };
     const raw = await this.post("authorize", `${PATHS.order}/${enc(orderId)}/authorize`, requestId, body);
     this.remember(raw.id, "order");
     const a = (raw.purchase_units as J[] | undefined)?.[0]?.payments?.authorizations?.[0] as J | undefined;

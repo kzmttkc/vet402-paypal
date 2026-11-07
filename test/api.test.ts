@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createApp } from "../src/server/app.js";
+import { createApp, paypalButtonConfig } from "../src/server/app.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
 import { approvalSentence, pickSellerFor, aggregateSellers, loadFrozenExport } from "../src/sellers/index.js";
 import { T0 } from "./helpers.js";
@@ -153,5 +153,49 @@ describe("job API, no network", () => {
     const afterRows = after.json.rows as { jobId: string; decision: string; kind: string }[];
     expect(afterRows.find((r) => r.jobId === sample!.jobId)!.decision).toBe("open");
     expect(afterRows.filter((r) => r.kind === "sample")).toHaveLength(rows.filter((r) => r.kind === "sample").length);
+  });
+
+  it("publishes the PayPal button config without the secret", async () => {
+    expect(paypalButtonConfig({ clientId: "", env: "sandbox" })).toEqual({ sdk: "v6", script: null, clientId: null, mode: "mock" });
+    expect(paypalButtonConfig({ clientId: "AQc_test", env: "mock" })).toEqual({ sdk: "v6", script: null, clientId: null, mode: "mock" });
+    expect(paypalButtonConfig({ clientId: "AQc_test", env: "sandbox" })).toEqual({
+      sdk: "v6",
+      script: "https://www.sandbox.paypal.com/web-sdk/v6/core",
+      clientId: "AQc_test",
+      mode: "sandbox",
+    });
+    const hidden = createApp({
+      rail: new MockPayPalRail({ now: () => T0 }),
+      now: () => T0,
+      paypal: { clientId: "", env: "mock", clientSecret: "super-secret" },
+    });
+    const missing = await get(hidden, "/api/paypal-sdk");
+    expect(missing.status).toBe(200);
+    expect(missing.json).toEqual({ sdk: "v6", script: null, clientId: null, mode: "mock" });
+    expect(JSON.stringify(missing.json)).not.toContain("super-secret");
+    const shown = createApp({
+      rail: new MockPayPalRail({ now: () => T0 }),
+      now: () => T0,
+      paypal: { clientId: "AQc_test", env: "sandbox", clientSecret: "still-secret" },
+    });
+    const live = await get(shown, "/api/paypal-sdk");
+    expect(live.json).toMatchObject({ sdk: "v6", clientId: "AQc_test", mode: "sandbox" });
+    expect(JSON.stringify(live.json)).not.toContain("still-secret");
+  });
+
+  it("stages a PayPal order for Supervised, then authorizes that same order after the buyer approves", async () => {
+    const a = app();
+    const planned = await post(a, "/api/jobs", brief);
+    const id = String(planned.json.jobId);
+    const staged = await post(a, `/api/jobs/${id}/paypal-order`, {});
+    expect(staged.status).toBe(200);
+    expect(staged.json.alreadyHeld).toBe(false);
+    expect(String(staged.json.orderId)).toMatch(/^ORDER-MOCK-/);
+    const again = await post(a, `/api/jobs/${id}/paypal-order`, {});
+    expect(again.json.orderId).toBe(staged.json.orderId);
+    const approved = await post(a, `/api/jobs/${id}/approve`, { approver: "buyer", buyerApproved: true });
+    expect(approved.status).toBe(200);
+    expect(approved.json.status).toBe("authorized");
+    expect(approved.json.orderId).toBe(staged.json.orderId);
   });
 });
