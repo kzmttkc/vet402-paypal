@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, screenJob, type Copy, type Lang } from "../../src/i18n/copy.js";
+import { SIMULATED_BANNER, copyFor, langFromSearch, presentDecision, presentError, presentKind, presentReason, scoreLine, scoreModelLine, screenJob, type Copy, type Lang, type PageScorePhase } from "../../src/i18n/copy.js";
 import { speechConstructor, startSpeechInput, type SpeechHost, type SpeechSession } from "../../src/speech/input.js";
 import type { ActivityEntry, Health, JobView, ReviewRow } from "./types";
+import { subscribePageScore } from "./local-score";
 import { api } from "./transport";
 
 type Autonomy = "careful" | "balanced" | "autopilot";
@@ -212,6 +213,7 @@ export function App({ simulated = false }: { simulated?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
+  const [scorePhase, setScorePhase] = useState<PageScorePhase | null>(null);
   const speechRef = useRef<SpeechSession | null>(null);
   const canSpeak = speechConstructor(window as unknown as SpeechHost) !== null;
 
@@ -220,6 +222,11 @@ export function App({ simulated = false }: { simulated?: boolean }) {
     document.title = copy.documentTitle;
     return () => speechRef.current?.stop();
   }, [copy]);
+
+  useEffect(() => {
+    if (!simulated) return;
+    return subscribePageScore(setScorePhase);
+  }, [simulated]);
 
   function speakRequest() {
     if (listening) {
@@ -317,6 +324,11 @@ export function App({ simulated = false }: { simulated?: boolean }) {
       {simulated && (
         <p className="sim-banner" data-testid="sim-banner">
           {SIMULATED_BANNER}
+        </p>
+      )}
+      {simulated && scorePhase && (
+        <p className="score-note" data-testid="score-model">
+          {scoreModelLine(lang, scorePhase)}
         </p>
       )}
       <main className="wrap" data-lang={lang}>

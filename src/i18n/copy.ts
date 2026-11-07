@@ -252,6 +252,26 @@ export function scoreLine(lang: Lang, passAt: number, voidBelow: number): string
   return `Pass at ${pass} or above. Void below ${below}. Between those, a person decides.`;
 }
 
+export type PageScorePhase = { phase: "download"; ratio: number } | { phase: "ready" } | { phase: "failed" };
+
+/** The static page cannot ship the 570MB language model, so it says which scorer it is using. */
+export function scoreModelLine(lang: Lang, state: PageScorePhase): string {
+  if (state.phase === "ready") {
+    return lang === "ja"
+      ? "言語モデルは約 570MB あるため、このページは埋め込みの近さで採点しています。"
+      : "The language model is about 570MB, so this page scores by embedding similarity.";
+  }
+  if (state.phase === "failed") {
+    return lang === "ja"
+      ? "言語モデルは重すぎ、埋め込みモデルも読めなかったため、欄が埋まっているかだけで採点しています。"
+      : "The language model is too heavy, and the embedding model did not load. This page only checks that the text fields are filled in.";
+  }
+  const pct = Math.round(Math.max(0, Math.min(1, state.ratio)) * 100);
+  return lang === "ja"
+    ? `言語モデルは約 570MB あるため、埋め込みモデルを読み込んでいます（${pct}%）。`
+    : `The language model is about 570MB, so this page is loading an embedding model (${pct}%).`;
+}
+
 const SELLER_LINE = /^(\d+) paid purchases, (\d+\.\d%) matched the promised shape, (\d+\.\d%) errors after payment$/;
 
 export function presentSellerLine(lang: Lang, line: string): string {

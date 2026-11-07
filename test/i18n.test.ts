@@ -7,6 +7,7 @@ import {
   presentSellerLine,
   presentSummary,
   scoreLine,
+  scoreModelLine,
   screenJob,
 } from "../src/i18n/copy.js";
 
@@ -24,6 +25,10 @@ describe("screen language", () => {
     expect(copyFor("ja").play).not.toBe(copyFor("en").play);
     expect(copyFor("en").balanced).toContain("$50.00");
     expect(copyFor("ja").balanced).toContain("$50.00");
+    expect(scoreModelLine("en", { phase: "ready" })).toContain("embedding");
+    expect(scoreModelLine("ja", { phase: "ready" })).toContain("埋め込み");
+    expect(scoreModelLine("ja", { phase: "download", ratio: 0.4 })).toContain("40%");
+    expect(scoreModelLine("en", { phase: "failed" })).toContain("did not load");
   });
 
   it("keeps the same amount and id text in English and Japanese", () => {

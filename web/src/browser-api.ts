@@ -1,4 +1,5 @@
 import type { Autonomy } from "../../src/policy/mandate.js";
+import type { Scorer } from "../../src/verify/judge.js";
 import { createDemoDesk } from "../../src/demo/browser-desk.js";
 import { Desk, DeskError } from "../../src/server/desk.js";
 import type { DeliveryMode } from "../../src/server/deliveries.js";
@@ -83,8 +84,8 @@ async function dispatch(desk: Desk, path: string, body: unknown): Promise<unknow
 }
 
 /** One in-memory desk for the whole page. The same routes the server speaks. */
-export function createBrowserTransport(): Transport {
-  const desk = createDemoDesk();
+export function createBrowserTransport(scorer?: Scorer): Transport {
+  const desk = createDemoDesk(undefined, scorer);
   return async <T>(path: string, body?: unknown): Promise<T> => {
     try {
       return (await dispatch(desk, path, body)) as T;

@@ -2,7 +2,7 @@ import { COMPANY_RECORDS } from "../../eval/condition.js";
 import type { SellerStats } from "../sellers/aggregate.js";
 import { Desk } from "../server/desk.js";
 import { MockPayPalRail } from "../rail/mock.js";
-import { completenessScorer } from "../verify/judge.js";
+import { completenessScorer, type Scorer } from "../verify/judge.js";
 
 /**
  * The seller the live screen would pick from the frozen export
@@ -26,14 +26,14 @@ export function demoSellers(): Map<string, SellerStats> {
 }
 
 /** Mock rail, judge, and ledger in memory. No files, no network, no keys. */
-export function createDemoDesk(now?: () => number): Desk {
+export function createDemoDesk(now?: () => number, scorer?: Scorer): Desk {
   const stringPaths = Object.entries(COMPANY_RECORDS.fields)
     .filter((entry): entry is [string, "string"] => entry[1] === "string")
     .map(([path]) => path);
   return new Desk({
     rail: new MockPayPalRail(),
     sellers: demoSellers(),
-    scorer: completenessScorer(stringPaths),
+    scorer: scorer ?? completenessScorer(stringPaths),
     ...(now ? { now } : {}),
   });
 }

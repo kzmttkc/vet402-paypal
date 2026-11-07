@@ -8,10 +8,12 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import { App } from "./App";
 import { createBrowserTransport } from "./browser-api";
+import { pageScorer, startPageScorer } from "./local-score";
 import { setTransport } from "./transport";
 import "./styles.css";
 
-setTransport(createBrowserTransport());
+startPageScorer();
+setTransport(createBrowserTransport(pageScorer));
 
 const root = document.getElementById("root");
 if (!root) throw new Error("missing root");

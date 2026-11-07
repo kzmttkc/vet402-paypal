@@ -33,7 +33,6 @@ export default defineConfig({
       { find: "node:fs", replacement: shim("fs") },
       { find: "node:path", replacement: shim("path") },
       { find: "node:url", replacement: shim("url") },
-      { find: "@huggingface/transformers", replacement: shim("transformers") },
     ],
   },
   build: {
