@@ -185,6 +185,7 @@ p { margin: 0.35rem 0 0; }
   margin-top: 0.25rem;
   font-size: 0.92rem;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
 .tiny {
@@ -430,6 +431,7 @@ legend { padding: 0 0.2rem; }
 .id {
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.72rem;
+  overflow-wrap: anywhere;
 }
 
 .escrow {
@@ -485,6 +487,13 @@ legend { padding: 0 0.2rem; }
   .side { padding: 0.55rem 0.45rem 0.65rem; }
   .side li { font-size: 0.82rem; }
   .ask { font-size: 1.2rem; }
+}
+
+@media (max-width: 420px) {
+  .pair { grid-template-columns: 1fr; }
+  .stamp { font-size: 1.45rem; }
+  .side { padding: 0.75rem 0.7rem 0.85rem; }
+  .side li { font-size: 0.92rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

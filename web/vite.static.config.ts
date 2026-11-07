@@ -10,8 +10,8 @@ function pagesReady(): Plugin {
   return {
     name: "pages-ready",
     transformIndexHtml(html) {
-      // crossorigin blocks the module when the page is opened as a file.
-      return html.replaceAll(" crossorigin", "");
+      // A deferred classic script, so the page opens from a file as well as from GitHub Pages.
+      return html.replaceAll(" crossorigin", "").replaceAll(' type="module"', " defer");
     },
     closeBundle() {
       const dir = fileURLToPath(new URL("../dist-static/", import.meta.url));
@@ -41,6 +41,10 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: fileURLToPath(new URL("./index.static.html", import.meta.url)),
+      output: {
+        format: "iife",
+        inlineDynamicImports: true,
+      },
     },
   },
 });
