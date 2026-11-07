@@ -28,6 +28,9 @@ describe("screen language", () => {
     expect(copyFor("ja").play).not.toBe(copyFor("en").play);
     expect(copyFor("en").balanced).toContain("$50.00");
     expect(copyFor("ja").balanced).toContain("$50.00");
+    expect(copyFor("en").levels.map((level) => level.label)).toEqual(["Supervised", "Supervised under a limit", "Automatic"]);
+    expect(copyFor("ja").levels.map((level) => level.label)).toEqual(["Supervised", "Supervised under a limit", "Automatic"]);
+    expect(copyFor("en").truthPlay).toBe("Play");
     expect(scoreModelLine("en", { phase: "ready" })).toContain("embedding");
     expect(scoreModelLine("ja", { phase: "ready" })).toContain("埋め込み");
     expect(scoreModelLine("ja", { phase: "download", ratio: 0.4 })).toContain("40%");

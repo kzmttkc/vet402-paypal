@@ -1,5 +1,7 @@
 # vet402 × PayPal
 
+PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync publishes a physical catalog to an AI and does not cover digital goods ([Store Sync overview](https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview)). Seller Protection also leaves digital goods out ([PayPal Seller Protection](https://www.paypal.com/c2/webapps/mpp/ua/seller-protection)).
+
 Pay per truth: one hold on the job, then capture only the records that passed and release the rest.
 Scam my agent: a browser page where a judge sends a fake delivery and sees the outcome, the reason, and $0.00 when it fails.
 The seller's paid history decides the hold: one authorization for the whole job, or five records at a time.
@@ -17,7 +19,7 @@ The public demo URL is TBD as of 2026-11-07. Nothing in this repository is a hos
 | Public demo | TBD |
 | `npm install && npm run dev`, then open http://127.0.0.1:5173 | the hold screen, in English. The banner says this session is on the mock rail and no money moves. `?lang=ja` switches the screen to Japanese. Amounts and ids stay as they are. |
 | **Play the same job both ways** | left **CAPTURED**, right **VOIDED**, and "$0. Your agent didn't lose a cent." While Qwen3 is downloading, the screen says `AI model loading: n%`. The pair still resolves, and the same process switches to Qwen3 when the download finishes. |
-| Type a job, pick a budget and Careful / Balanced / Autopilot, then **Show the approval card** | the breakdown, the condition id, the seller line ("n paid purchases, x% matched the promised shape, y% errors after payment"), and "May I place a hold of $X until each delivery checks out?" |
+| Type a job, pick a budget and Supervised / Supervised under a limit / Automatic, then **Show the plan** | what is being bought, how many, the price, and the seller's track record in one line |
 | **Place the hold**, then **Deliver the records** / **Deliver nothing** / **Deliver late** | PASS → captured, FAIL → voided, or UNSURE → a person, then "Captured $a of $b hold. $c released." |
 | Scroll to **With a person** | sample holds in the grid. **Reset samples** puts them back. |
 | Scroll to **Activity** | order, authorization, capture, and refund ids, the verdict, and the ledger hash |
@@ -40,7 +42,7 @@ day total + amount ≤ dailyCap      month total + amount ≤ monthlyCap
 
 At capture time, expiry, revocation, the authorization's own expiry, and the stop switch are checked again, and the ledger chain is verified.
 
-Autonomy: **Careful** (a person approves every job), **Balanced** (automatic up to a threshold), **Autopilot** (automatic within budget and caps). The threshold, autonomy, caps, seller list, and expiry can only be tightened.
+Autonomy, in PayPal's words: **Supervised** (a person approves every job), **Supervised under a limit** (automatic up to a threshold), **Automatic** (automatic within budget and caps). The threshold, autonomy, caps, seller list, and expiry can only be tightened. The internal ids stay `careful`, `balanced`, and `autopilot`.
 
 Amounts are integer cents computed by code from the job plan. The judge's output has no amount field. The scorer returns one number in [0, 1], or nothing.
 
@@ -70,7 +72,13 @@ The buyer's funds stay with PayPal under a standard authorization. This code dec
 
 ## Digital deliveries
 
-PayPal's Seller Protection does not cover digital goods ([PayPal Seller Protection](https://www.paypal.com/c2/webapps/mpp/ua/seller-protection)). An agent buys a digital delivery, so this program extends that check-then-pay protection to what the machine receives. A seller with enough paid history, a high shape-match rate, and few errors after payment is held once for the whole job. A new or uncertain seller is held five records at a time: capture what passed, then the next hold. The approval card says which, in one line.
+PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync is for a physical catalog ([Store Sync overview](https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview)). Seller Protection leaves digital goods out ([PayPal Seller Protection](https://www.paypal.com/c2/webapps/mpp/ua/seller-protection)).
+
+A seller with enough paid history, a high shape-match rate, and few errors after payment is held once for the whole job. A new or uncertain seller is held five records at a time: capture what passed, then the next hold. The plan says which, in one line.
+
+## PayPal button
+
+Supervised approval uses PayPal JavaScript SDK v6. The script is `https://www.sandbox.paypal.com/web-sdk/v6/core` (HTTP 200 on 2026-11-07, cache tag `paypal-web-sdk-6.72.0`). The control is PayPal's own `<paypal-button>`, started with `createPayPalOneTimePaymentSession`. The client id is read only from the environment variable `PAYPAL_CLIENT_ID`. This repository does not contain one. When it is unset, or `PAYPAL_ENV` is not `sandbox`, the approval sheet is a simulated screen and says so. Setup reference: [Set up JavaScript SDK v6](https://developer.paypal.com/sdk/js/set-up). The page does not redraw PayPal's logo or colors outside that official button.
 
 ## x402 auth-capture and PayPal Orders
 

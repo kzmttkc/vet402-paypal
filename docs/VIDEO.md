@@ -4,7 +4,7 @@ Under three minutes. English. No music. No extra logos beyond what the screen al
 
 Spoken lines only. Clicks happen under the line, not instead of it.
 
-**0:00** Pay per truth. Fifty company records. One hold of fifty dollars. Each line lands pass or fail. The captured counter climbs, and so does the amount released. Thirteen fail. The line reads: Captured $37.00 of $50.00. $13.00 released.
+**0:00** PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync is for physical goods (https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview). Seller Protection leaves digital goods out (https://www.paypal.com/c2/webapps/mpp/ua/seller-protection). Then: Pay per truth. Fifty company records. One hold of fifty dollars. Each line lands pass or fail. The captured counter climbs, and so does the amount released. Thirteen fail. The line reads: Captured $37.00 of $50.00. $13.00 released.
 
 **0:12** Scam my agent. An empty body. A field of the wrong type. A missing field. A year out of range. An instruction written into the name. A late reply. Send each one. None of them are captured. The amount stays at $0.00.
 
@@ -30,10 +30,10 @@ Stop by 2:20. Leave the end card up until 2:30 if the clicks ran long.
 
 | Order | What is on screen | Notes |
 |---|---|---|
-| 1 | Pay per truth, after **Run the 50 records**, with the final line `Captured $37.00 of $50.00. $13.00 released.` | Opening frame. Hold it until the 0:00 line finishes. |
+| 1 | Pay per truth, after **Play**, with the final line `Captured $37.00 of $50.00. $13.00 released.` | Opening frame. Hold it until the 0:00 line finishes. |
 | 2 | Scam my agent, after **Send to my agent** on an empty body or a wrong type | Outcome is `VOID` or `HUMAN`, never `CAPTURE`. Captured amount is `$0.00`. |
 | 3 | The same panel, **Not a company**, after `AI model loading` has gone | Qwen3 voids a shape-valid delivery. Outcome `VOID`. Amount `$0.00`. About 15 seconds. |
-| 4 | Approval card after **Show the approval card** | Seller id is a company-data outlet. The seller line and the hold reason are both readable. |
+| 4 | Plan, after **Show the plan**, on Supervised | Seller line is one sentence. The level reads Supervised, Supervised under a limit, or Automatic. |
 | 5 | The same card, scrolled to the condition | Shape, ranges, and the condition id. This is the 0:57 frame. |
 | 6 | A terminal with one eval line | `npm run eval` (no `SCORER`). The line includes `cases=248` and `false_approvals=0`. Do not wait on a download on camera. |
 | 7 | `docs/sandbox-run.json` | Readable ids: `27224167CR8866647` CAPTURED, `9X732969JW2516540`, `00N1620869359422G` VOIDED. About 15 seconds. Do not open `.env`. |

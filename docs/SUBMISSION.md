@@ -21,7 +21,7 @@ It places one PayPal authorization for a data job. It buys from a seller whose p
 
 Each delivery is checked in code: HTTP status, empty body, JSON, shape, values, latency, then one score in [0, 1]. Capture keeps the part that passed and releases the rest (`final_capture=true`). A total miss is a void. Late, an unsure score, or an instruction inside a declared field goes to a person. The buyer's funds stay at PayPal. This program does not hold them.
 
-PayPal's Seller Protection does not cover digital goods (PayPal, https://www.paypal.com/c2/webapps/mpp/ua/seller-protection). An agent buys a digital delivery, so the same check-then-pay protection is what the machine receives. A seller with a strong paid history is authorized once for the job. A new or uncertain seller is authorized five records at a time.
+PayPal Agent Ready and Store Sync support an agent buying physical goods. An agent also buys digital deliveries: data, an answer from an API, a report. This work extends the same supervised and automatic idea to those digital deliveries, and captures only after the check. Store Sync publishes a physical catalog and does not cover digital goods (https://docs.paypal.ai/growth/agentic-commerce/store-sync/overview). Seller Protection also leaves digital goods out (https://www.paypal.com/c2/webapps/mpp/ua/seller-protection). A seller with a strong paid history is authorized once for the job. A new or uncertain seller is authorized five records at a time. Supervised approval is PayPal's own button (JavaScript SDK v6). With no `PAYPAL_CLIENT_ID`, the sheet says it is simulated.
 
 ## How I built it
 
@@ -89,7 +89,7 @@ No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.
 3. `npm run dev`
 4. Open http://127.0.0.1:5173
 5. **Play the same job both ways.** The left side reads CAPTURED. The right side reads VOIDED. If Qwen3 is still downloading, the screen says `AI model loading: n%` and the pair still resolves. When the download finishes, the same process scores with Qwen3. No restart.
-6. **Show the approval card.** The seller line is counted from the frozen export.
+6. **Show the plan.** The seller line is counted from the frozen export. The levels read Supervised, Supervised under a limit, and Automatic.
 7. **Place the hold**, then **Deliver the records**, **Deliver nothing**, or **Deliver late**.
 8. **Void every open hold.** Open authorizations void.
 9. Optional: `npm run eval`. The summary line should match [EVAL.md](../EVAL.md): 248 cases and `false_approvals=0`. It does not download a model.

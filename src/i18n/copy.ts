@@ -58,6 +58,22 @@ export interface Copy {
   careful: string;
   balanced: string;
   autopilot: string;
+  tabBuy: string;
+  tabScam: string;
+  themeToDark: string;
+  themeToLight: string;
+  planContinue: string;
+  sheetTitle: string;
+  mockApproval: string;
+  sdkLoading: string;
+  sdkFailed: string;
+  approveHold: string;
+  details: string;
+  deliveryHeading: string;
+  deliveryWaiting: string;
+  receiptEmpty: string;
+  scamEmptyState: string;
+  capturedWord: string;
   paysFor: string;
   hold: string;
   condition: string;
@@ -107,9 +123,9 @@ export interface Copy {
 }
 
 const LEVELS_EN: Copy["levels"] = [
-  { id: "careful", label: "Careful" },
-  { id: "balanced", label: "Balanced" },
-  { id: "autopilot", label: "Autopilot" },
+  { id: "careful", label: "Supervised" },
+  { id: "balanced", label: "Supervised under a limit" },
+  { id: "autopilot", label: "Automatic" },
 ];
 
 const EN: Copy = {
@@ -128,7 +144,7 @@ const EN: Copy = {
   play: "Play the same job both ways",
   truthHeading: "Pay per truth",
   truthLead: "One hold of $50.00 for 50 company records. Each record is judged. Capture keeps the ones that passed, and releases the rest.",
-  truthPlay: "Run the 50 records",
+  truthPlay: "Play",
   truthCaptured: "Captured",
   truthReleased: "Released",
   scamHeading: "Scam my agent",
@@ -154,11 +170,27 @@ const EN: Copy = {
   budget: "Budget",
   autonomy: "Autonomy",
   levels: LEVELS_EN,
-  showCard: "Show the approval card",
-  approval: "Approval",
-  careful: "Careful: a person approves every hold. The yes below is that approval.",
-  balanced: "Balanced: holds up to $50.00 can go through on their own. Above that, a person approves. The yes below is yours.",
-  autopilot: "Autopilot: inside the budget and the caps, the yes below places the hold.",
+  showCard: "Show the plan",
+  approval: "Plan",
+  careful: "Supervised: a person approves every hold, on PayPal's own button.",
+  balanced: "Supervised under a limit: holds up to $50.00 can go through on their own. Above that, a person approves.",
+  autopilot: "Automatic: inside the budget and the caps, the hold goes through.",
+  tabBuy: "Buy",
+  tabScam: "Scam my agent",
+  themeToDark: "Dark",
+  themeToLight: "Light",
+  planContinue: "Continue to approval",
+  sheetTitle: "Approve the hold",
+  mockApproval: "Simulated approval. PAYPAL_CLIENT_ID is not set, so this is not PayPal's button. No money moves.",
+  sdkLoading: "Loading PayPal's button…",
+  sdkFailed: "PayPal's button did not load. This approval is simulated, and no money moves.",
+  approveHold: "Approve the hold",
+  details: "Details",
+  deliveryHeading: "Delivery",
+  deliveryWaiting: "Nothing has arrived yet.",
+  receiptEmpty: "No PayPal activity yet. A hold writes the first line here.",
+  scamEmptyState: "Send a fake delivery. Nothing is captured until you do.",
+  capturedWord: "CAPTURED",
   paysFor: "What the hold pays for",
   hold: "Hold",
   condition: "Condition",
@@ -224,7 +256,7 @@ const JA: Copy = {
   play: "同じ仕事を両方で再生",
   truthHeading: "正しかった分だけ払う",
   truthLead: "会社の記録50件に、与信は1回です。1件ずつ判定し、合格した分だけ確定して、残りは解放します。",
-  truthPlay: "50件を判定する",
+  truthPlay: "再生",
   truthCaptured: "確定",
   truthReleased: "解放",
   scamHeading: "エージェントを騙す",
@@ -250,15 +282,31 @@ const JA: Copy = {
   budget: "予算",
   autonomy: "自律",
   levels: [
-    { id: "careful", label: "慎重（Careful）" },
-    { id: "balanced", label: "標準（Balanced）" },
-    { id: "autopilot", label: "自動（Autopilot）" },
+    { id: "careful", label: "Supervised" },
+    { id: "balanced", label: "Supervised under a limit" },
+    { id: "autopilot", label: "Automatic" },
   ],
-  showCard: "承認カードを表示",
-  approval: "承認",
-  careful: "慎重（Careful）: 与信のたびに人が承認します。下の承諾が、その承認です。",
-  balanced: "標準（Balanced）: $50.00 までの与信は、そのまま通ります。それを超える分は人が承認します。下の承諾が、あなたの承認です。",
-  autopilot: "自動（Autopilot）: 予算と上限の内側なら、下の承諾で与信します。",
+  showCard: "計画を表示",
+  approval: "計画",
+  careful: "Supervised: 与信のたびに人が承認します。承認は PayPal のボタンで行います。",
+  balanced: "Supervised under a limit: $50.00 までの与信は、そのまま通ります。それを超える分は人が承認します。",
+  autopilot: "Automatic: 予算と上限の内側なら、与信はそのまま通ります。",
+  tabBuy: "買う",
+  tabScam: "エージェントを騙す",
+  themeToDark: "ダーク",
+  themeToLight: "ライト",
+  planContinue: "承認へ進む",
+  sheetTitle: "与信を承認する",
+  mockApproval: "模擬の承認です。PAYPAL_CLIENT_ID が無いので、これは PayPal のボタンではありません。お金は動きません。",
+  sdkLoading: "PayPal のボタンを読み込んでいます…",
+  sdkFailed: "PayPal のボタンを読み込めませんでした。この承認は模擬で、お金は動きません。",
+  approveHold: "与信を承認する",
+  details: "詳細",
+  deliveryHeading: "納品",
+  deliveryWaiting: "まだ何も届いていません。",
+  receiptEmpty: "PayPal の記録はまだありません。与信を置くと、最初の一行がここに出ます。",
+  scamEmptyState: "偽の納品を送ってください。送るまで、確定はされません。",
+  capturedWord: "CAPTURED",
   paysFor: "この与信が払うもの",
   hold: "与信",
   condition: "条件",
@@ -479,4 +527,91 @@ const ERRORS: Record<string, string> = {
 export function presentError(lang: Lang, message: string): string {
   if (lang === "en") return message;
   return ERRORS[message] ?? message;
+}
+
+const REASON_SENTENCE_EN: Record<string, string> = {
+  ok: "It matched the condition.",
+  paid_5xx: "The seller answered with a server error after payment.",
+  paid_4xx: "The seller answered with a client error after payment.",
+  non_2xx: "The seller did not answer with a success status.",
+  empty_200: "The body was empty.",
+  not_json: "The body was not JSON.",
+  shape_mismatch: "A field was missing or had the wrong type.",
+  out_of_range: "A value was outside the range fixed before the hold.",
+  late: "The reply was later than the condition allows.",
+  score_low: "The score was too low to pay.",
+  score_uncertain: "The score was in the middle, so a person decides.",
+  scorer_invalid: "The score was not a usable number, so a person decides.",
+  suspicious_field: "A field read like an instruction, so it was not captured.",
+};
+
+const REASON_SENTENCE_JA: Record<string, string> = {
+  ok: "条件に合いました。",
+  paid_5xx: "支払いのあと、売り手がサーバーエラーを返しました。",
+  paid_4xx: "支払いのあと、売り手がクライアントエラーを返しました。",
+  non_2xx: "売り手は成功のステータスを返しませんでした。",
+  empty_200: "本文が空でした。",
+  not_json: "本文が JSON ではありませんでした。",
+  shape_mismatch: "欄が欠けているか、型が違います。",
+  out_of_range: "値が、与信の前に決めた範囲の外でした。",
+  late: "返答が、条件の許す時間より遅かったです。",
+  score_low: "採点が低く、支払いません。",
+  score_uncertain: "採点が中間なので、人が決めます。",
+  scorer_invalid: "採点が使える数ではなかったので、人が決めます。",
+  suspicious_field: "欄が指示文のように読めたので、確定しませんでした。",
+};
+
+export function reasonSentence(lang: Lang, reason: string): string {
+  const table = lang === "ja" ? REASON_SENTENCE_JA : REASON_SENTENCE_EN;
+  return table[reason] ?? (lang === "ja" ? "与信の前に固定した条件に合いませんでした。" : "It did not match the condition fixed before the hold.");
+}
+
+/** One plain sentence for a scam result. Ids stay out of this sentence. */
+export function scamSentence(lang: Lang, result: { outcome: string; reason: string; amount: string }): string {
+  if (result.outcome === "capture") {
+    return lang === "ja" ? `これは通りました。確定は ${result.amount} です。` : `This one got through. Captured ${result.amount}.`;
+  }
+  if (result.outcome === "human") {
+    return lang === "ja" ? "人が見るまで、確定しません。" : "A person has to look before anything is captured.";
+  }
+  const why = reasonSentence(lang, result.reason);
+  return lang === "ja" ? `確定しませんでした。${why}` : `Nothing was captured. ${why}`;
+}
+
+export function deliverySentence(lang: Lang, progress: string): string {
+  if (progress.startsWith("PASS") || progress.startsWith("合格")) {
+    return lang === "ja" ? "条件に合ったので、この分は確定します。" : "It matched the condition, so this part is captured.";
+  }
+  if (progress.startsWith("FAIL") || progress.startsWith("不合格")) {
+    return lang === "ja" ? "条件に合わなかったので、この分は確定しません。" : "It failed the check, so this part is not captured.";
+  }
+  if (progress.startsWith("UNSURE") || progress.startsWith("不明")) {
+    return lang === "ja" ? "人が決めるまで、この分は確定しません。" : "A person decides this part before anything is captured.";
+  }
+  return lang === "ja" ? "まだ届いていません。" : "This part has not arrived yet.";
+}
+
+export function activitySentence(lang: Lang, type: string): string {
+  const en: Record<string, string> = {
+    authorize: "PayPal placed a hold. Nothing is captured until the delivery is checked.",
+    capture: "PayPal captured the part that passed and released the rest.",
+    void: "PayPal released the hold. Nothing was captured.",
+    refund: "PayPal refunded a capture.",
+    deny: "The hold was refused before PayPal moved any money.",
+    human: "A person has to decide this one.",
+    allow: "The rules allowed this hold.",
+    stop: "Every open hold was released.",
+  };
+  const ja: Record<string, string> = {
+    authorize: "PayPal が与信を置きました。納品を確かめるまで、確定はしません。",
+    capture: "合格した分を PayPal が確定し、残りは解放しました。",
+    void: "PayPal が与信を解放しました。確定したお金はありません。",
+    refund: "PayPal が確定分を返金しました。",
+    deny: "PayPal がお金を動かす前に、与信は拒否されました。",
+    human: "これは人が決めます。",
+    allow: "ルールがこの与信を許しました。",
+    stop: "開いている与信を、すべて解放しました。",
+  };
+  const table = lang === "ja" ? ja : en;
+  return table[type] ?? (lang === "ja" ? "この仕事に、PayPal の記録が一行増えました。" : "PayPal recorded another step on this job.");
 }
