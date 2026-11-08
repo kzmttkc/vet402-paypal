@@ -1,10 +1,10 @@
-A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives.
+An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). Here the agent pays the seller through PayPal only for the part that passed. A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives.
 PayPal Orders v2 places the hold (`intent=AUTHORIZE`). Payments v2 then captures only the sum that passed the check, and `final_capture=true` closes the rest of the hold.
-Example: at the rate in vet402's frozen export (1,826 of 13,893 settled purchases broken), an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same.
+Example: at that rate, an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same.
 
 ## Inspiration
 
-An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). This agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released. Those 1,826 are a paid 4xx (736), a paid 5xx (121), a shape mismatch that was not also late (728), or a 2xx later than 15 seconds (241).
+In the Play demo, the agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released. Those 1,826 are a paid 4xx (736), a paid 5xx (121), a shape mismatch that was not also late (728), or a 2xx later than 15 seconds (241).
 
 Built during the hackathon: the PayPal authorize, partial capture, void, and vault path, and the judge that decides them. The vet402 export it counts is existing public data.
 
@@ -43,8 +43,6 @@ A capture smaller than the authorization, and a vaulted card while the buyer is 
 ## Accomplishments
 
 `npm run eval` on 2026-11-07: 248 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.1% sent to a person (25/248). Ledger chain ok. Injected text outside a declared field flipped no verdict. That 0 is the stand-in for the 12 names already answered "no". On the 60 held-out names, both checks captured 14 of 30 companies and 0 of the 30 that are not. 25 of 60 went to a person. Qwen3 alone had been right on 49, and a yes alone would have captured 9 non-companies. One warm CPU score of a single name took 417 ms.
-
-With `ANTHROPIC_API_KEY` set, Claude (`claude-sonnet-5-5`) scores the same 60 names: on 2026-11-08 Claude alone was right on 53 of 60, and with the second check 0 of the 30 that are not companies were captured, 14 of 30 companies were captured, 0 companies were voided (Qwen3 voided 2), and 25 of 60 went to a person ([held-out-claude-sonnet-5-5-2026-11-08.json](held-out-claude-sonnet-5-5-2026-11-08.json)).
 
 Sandbox run `run-20261107034254` (2026-11-07T03:42:54.620Z to 2026-11-07T03:43:41.883Z, `api-m.sandbox.paypal.com`). Every id below was read back with GET. Detail is `docs/sandbox-run.json`.
 

@@ -527,14 +527,6 @@ const PROGRESS: Record<string, string> = {
   waiting: "待ち",
 };
 
-const REASONS: Record<string, string> = {
-  late: "遅延",
-  score_uncertain: "採点が中間",
-  scorer_invalid: "採点が無効",
-  suspicious_field: "疑わしい欄",
-  unsure: "不明",
-};
-
 const KINDS: Record<string, string> = {
   sample: "見本",
   live: "本番",
@@ -547,8 +539,7 @@ const DECISIONS: Record<string, string> = {
 };
 
 export function presentReason(lang: Lang, reason: string): string {
-  if (lang === "en") return reason;
-  return REASONS[reason] ?? reason;
+  return reasonSentence(lang, reason);
 }
 
 export function presentKind(lang: Lang, kind: string): string {
