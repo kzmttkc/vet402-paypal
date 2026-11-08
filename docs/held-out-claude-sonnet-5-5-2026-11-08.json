@@ -1,0 +1,619 @@
+{
+  "n": 60,
+  "companies": 30,
+  "notCompanies": 30,
+  "correct": 53,
+  "accuracy": 0.8833333333333333,
+  "capture": 36,
+  "void": 23,
+  "human": 1,
+  "wrong": [
+    {
+      "text": "Tuesday Sunrise",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "I can't say for certain. \"Tuesday S",
+      "answer": null,
+      "payment": "human",
+      "correct": false
+    },
+    {
+      "text": "Red Bicycle",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Red Bicycle\" is used as",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Green Tea",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Green Tea\" is used as a company",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Maple Leaf",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. Maple Leaf Foods, a",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Salt Shaker",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Salt Shaker\" is used as",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Yellow Pencil",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Yellow Pencil\" is used",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "River Pebble",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"River Pebble\" is used as a name",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    }
+  ],
+  "rows": [
+    {
+      "text": "Toyota Motor",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Toyota Motor\" is part of",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Sony Group",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Mitsubishi Heavy Industries",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "SoftBank Group",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Hitachi Ltd",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Panasonic Holdings",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Nintendo Co",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Nintendo Co., Lt",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Honda Motor",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Honda Motor\" is part of the",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Canon Inc",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Fujitsu Limited",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Unilever",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Nestle",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Siemens",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Samsung Electronics",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Hyundai Motor",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Bosch",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Airbus",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Maersk",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Caterpillar",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "John Deere",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "FedEx",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "UPS",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes. UPS stands for United Parcel",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "DHL Express",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes. DHL Express is the name of a division of",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "IKEA",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Patagonia",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Stripe",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Shopify",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Adobe",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Salesforce",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "ASML",
+      "truth": "company",
+      "leftOutOfList": false,
+      "raw": "Yes.",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": true
+    },
+    {
+      "text": "Tuesday Sunrise",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "I can't say for certain. \"Tuesday S",
+      "answer": null,
+      "payment": "human",
+      "correct": false
+    },
+    {
+      "text": "Glass of Milk",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Glass of Milk\" isn't a well",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Wooden Chair",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Wooden Chair\" is a generic desc",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Red Bicycle",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Red Bicycle\" is used as",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Paper Notebook",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Paper Notebook\" is a generic term",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Kitchen Sponge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Kitchen Sponge\" is a gener",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Cotton Socks",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Cotton Socks\" isn't a well",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Green Tea",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Green Tea\" is used as a company",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Bus Ticket",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Bus Ticket\" is a generic ph",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Rain Gauge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Rain gauge\" is a generic term for",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Maple Leaf",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. Maple Leaf Foods, a",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Salt Shaker",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Salt Shaker\" is used as",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Door Hinge",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Door hinge\" is a common term for a h",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Yellow Pencil",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"Yellow Pencil\" is used",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Train Timetable",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Train Timetable\" is a generic descri",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Ceramic Bowl",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Ceramic Bowl\" is a gener",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Hiking Boot",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Hiking boot\" is a generic term for",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Window Curtain",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Window Curtain\" is a generic descri",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Garden Hose",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Garden Hose\" is a generic term for",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Library Card",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Library Card\" is generally understood as a common",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Birthday Cake",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Birthday Cake\" is a common term for",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Steel Ruler",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Steel Ruler\" is a generic term",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Postage Stamp",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Postage stamp\" is a generic term for",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Alarm Clock",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Alarm Clock\" is a generic term",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "River Pebble",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "Yes. \"River Pebble\" is used as a name",
+      "answer": "yes",
+      "payment": "capture",
+      "correct": false
+    },
+    {
+      "text": "Wool Scarf",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Wool Scarf\" is a generic description",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Desk Lamp",
+      "truth": "not_company",
+      "leftOutOfList": false,
+      "raw": "No. \"Desk Lamp\" is a common noun",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Monday Forecast",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "No. \"Monday Forecast\" isn't a company",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Miso Ramen",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "No. \"Miso Ramen\" is a type of",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    },
+    {
+      "text": "Wireless Mouse",
+      "truth": "not_company",
+      "leftOutOfList": true,
+      "raw": "No. \"Wireless Mouse\" is a generic",
+      "answer": "no",
+      "payment": "void",
+      "correct": true
+    }
+  ],
+  "model": "claude-sonnet-5-5",
+  "retrieved_at": "2026-11-08T00:13:45.753Z"
+}

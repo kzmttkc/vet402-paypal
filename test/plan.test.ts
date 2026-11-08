@@ -68,4 +68,66 @@ describe("job plan", () => {
     expect(plan.totalCents).toBe(4_000);
     expect(plan.items[0]?.priceCents).toBe(4_000);
   });
+
+  it("sends tool_choice auto and thinking between_tools, and does not send temperature", async () => {
+    let body: {
+      tool_choice?: { type: string; name?: string };
+      thinking?: { type: string };
+      temperature?: number;
+      system?: string;
+    } = {};
+    const fetchImpl = vi.fn(async (_url: unknown, init: RequestInit) => {
+      body = JSON.parse(String(init.body)) as typeof body;
+      return new Response(
+        JSON.stringify({
+          content: [
+            {
+              type: "tool_use",
+              name: "report_plan",
+              input: { description: "Two records", items: [{ label: "companies", count: 2 }] },
+            },
+          ],
+        }),
+        { status: 200 },
+      );
+    });
+    const plan = await planJob("collect 2 company records", 2_000, {
+      env: { ANTHROPIC_API_KEY: "sk-ant-test-secret-value" },
+      fetch: fetchImpl as unknown as typeof fetch,
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(body.tool_choice).toEqual({ type: "auto" });
+    expect(body.thinking).toEqual({ type: "between_tools" });
+    expect(body.temperature).toBeUndefined();
+    expect(body.system).toContain("Always call report_plan.");
+    expect(plan.description).toBe("Two records");
+    expect(plan.items.map((item) => item.priceCents)).toEqual([2_000]);
+    expect(plan.passAt).toBe(0.9);
+    expect(plan.voidBelow).toBe(0.6);
+  });
+
+  it("reads report_plan when a text block comes before tool_use", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          content: [
+            { type: "text", text: "Drafting the work." },
+            {
+              type: "tool_use",
+              name: "report_plan",
+              input: { description: "Two batches", items: [{ label: "batch a", count: 3 }] },
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const plan = await planJob("collect 9 company records", 3_000, {
+      env: { ANTHROPIC_API_KEY: "sk-ant-test-secret-value" },
+      fetch: fetchImpl as unknown as typeof fetch,
+    });
+    expect(plan.description).toBe("Two batches");
+    expect(plan.items.map((item) => item.count)).toEqual([3]);
+    expect(plan.items.map((item) => item.priceCents)).toEqual([3_000]);
+  });
 });

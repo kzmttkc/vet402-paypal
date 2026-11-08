@@ -1,6 +1,6 @@
 # vet402 × PayPal
 
-An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives. PayPal Orders v2 places the hold (`intent=AUTHORIZE`). Payments v2 then captures only the sum that passed the check, and `final_capture=true` closes the rest of the hold. Example: at that rate, an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same. In the Play demo, the agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released.
+An agent buys data through PayPal and pays only for what passed a fixed check: one authorization, a capture of the passing part, and final_capture=true releases the rest. An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives. PayPal Orders v2 places the hold (`intent=AUTHORIZE`). Payments v2 then captures only the sum that passed the check, and `final_capture=true` closes the rest of the hold. Example: at that rate, an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same. In the Play demo, the agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released. Try it: https://kzmttkc.github.io/vet402-paypal/ (press Play). Video: https://youtu.be/7sQ_moJ23OU (2:49).
 
 Pay per truth: one hold on the job, then capture only the records that passed and release the rest.
 Scam my agent: a browser page where a judge sends a fake delivery and sees the outcome, the reason, and $0.00 when it fails.
@@ -13,6 +13,8 @@ The seller line on the approval card is counted from 13,893 settled purchases in
 ## Two minutes
 
 The public demo is https://kzmttkc.github.io/vet402-paypal/ . The mock screen moves no money.
+
+The server at https://vet402-paypal.onrender.com keeps PayPal on the mock and scores with the embedding floor, the same line the screen shows. /api/health returns {"ok":true,"rail":"mock",...,"model":{"phase":"embedding",...}}. On the free plan, the first request takes about 50 seconds while the instance wakes.
 
 | Do this | It shows |
 |---|---|
@@ -30,6 +32,8 @@ The public demo is https://kzmttkc.github.io/vet402-paypal/ . The mock screen mo
 The static page starts loading the embedding model when the page opens. If that load has finished when **Play** is pressed, the page judges immediately. If it has not, the page says `AI model loading: n%` and then judges. If the model does not load, the page does not stamp CAPTURED.
 
 `npm run screens:static` opens the static page at 375px in a headless browser, presses **Play** right away, and checks that the first status is `CAPTURED`.
+
+`npm run smoke:claude` checks connectivity on the score path and the plan path when `ANTHROPIC_API_KEY` is set.
 
 ## May it pay?
 
@@ -110,6 +114,8 @@ False approvals: 0. Correct deliveries approved: 124/124. Sent to a person: 25/2
 The 12 off-topic names in that run are `OFF_TOPIC_NAMES`: names Qwen3 had already answered "no" to. Voiding all 12 is that list. The stand-in answers "no" when the question quotes one of them, so `false_approvals=0` is not a held-out score.
 
 On 60 other names, 30 companies and 30 that are not, Qwen3 alone was right on 49 (81.7%) on 2026-11-07. A yes is no longer enough. The name also has to be nearer a fixed list of company-name exemplars than the calibration phrase "Iron Nail" (all-MiniLM-L6-v2). One check alone leaves the score at 0.75, and a person decides. Both no scores 0.15 and voids. On those 60, using the recorded Qwen3 answers and that exemplar check: 0 names that are not companies were captured, 14 of 30 companies were captured (46.7%), and 25 of 60 went to a person (41.7%). The line was not chosen from these 60. Detail: [EVAL.md](EVAL.md) and [docs/held-out-qwen3-2026-11-07.json](docs/held-out-qwen3-2026-11-07.json).
+
+With `ANTHROPIC_API_KEY` set, Claude (`claude-sonnet-5-5`) scores the same 60 names: on 2026-11-08 Claude alone was right on 53 of 60, and with the second check 0 of the 30 that are not companies were captured, 14 of 30 companies were captured, 0 companies were voided (Qwen3 voided 2), and 25 of 60 went to a person ([docs/held-out-claude-sonnet-5-5-2026-11-08.json](docs/held-out-claude-sonnet-5-5-2026-11-08.json)).
 
 `SCORER=transformers npm run eval` (`onnx-community/Qwen3-0.6B-ONNX`, q4f16, no token, no `ANTHROPIC_API_KEY`) prints the same 248-case line, because those 12 names are the list above. One warm CPU score of a single name took 417 ms. The static page does not download this model (about 570MB). It uses the recorded Qwen3 answers plus the MiniLM exemplar check, and captures only when both agree. `npm run eval` also prints 12 pre-registered paraphrased instructions, one line each.
 

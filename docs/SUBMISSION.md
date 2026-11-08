@@ -36,11 +36,15 @@ The export has no column for an empty 200, for injected text, for an instruction
 
 Structural checks decide most failures before the score runs. Twelve shape-valid deliveries in the 248 use names Qwen3 had already answered "no" to, so voiding those 12 is that list. On 60 names that were not used to build the list (30 companies and 30 that are not), Qwen3 alone was right on 49 of 60. A capture now needs that yes and a second check: the name has to be nearer a fixed list of company exemplars than the calibration phrase Iron Nail. On the recorded answers, 0 of the 30 that are not companies were captured, 14 of 30 companies were captured, and 25 of 60 went to a person. Monday Forecast, Miso Ramen, and Wireless Mouse are three of the nine that a yes alone would have captured. They now go to a person. Both checks saying no still voids. The 248-case line comes from the eval's fixed stand-in, not a model. The model numbers are the 60 above. Detail is [EVAL.md](../EVAL.md).
 
+With `ANTHROPIC_API_KEY` set, Claude (`claude-sonnet-5-5`) scores the same 60 names: on 2026-11-08 Claude alone was right on 53 of 60, and with the second check 0 of the 30 that are not companies were captured, 14 of 30 companies were captured, 0 companies were voided (Qwen3 voided 2), and 25 of 60 went to a person ([held-out-claude-sonnet-5-5-2026-11-08.json](held-out-claude-sonnet-5-5-2026-11-08.json)).
+
 A capture smaller than the authorization, and a vaulted card while the buyer is away, had to be read back from the sandbox rather than trusted from the response I had just sent. A saved PayPal balance still stops at `PAYER_ACTION_REQUIRED`. I left that order unapproved.
 
 ## Accomplishments
 
 `npm run eval` on 2026-11-07: 248 cases, 0 false approvals, 100.0% of correct deliveries captured (124/124), 10.1% sent to a person (25/248). Ledger chain ok. Injected text outside a declared field flipped no verdict. That 0 is the stand-in for the 12 names already answered "no". On the 60 held-out names, both checks captured 14 of 30 companies and 0 of the 30 that are not. 25 of 60 went to a person. Qwen3 alone had been right on 49, and a yes alone would have captured 9 non-companies. One warm CPU score of a single name took 417 ms.
+
+With `ANTHROPIC_API_KEY` set, Claude (`claude-sonnet-5-5`) scores the same 60 names: on 2026-11-08 Claude alone was right on 53 of 60, and with the second check 0 of the 30 that are not companies were captured, 14 of 30 companies were captured, 0 companies were voided (Qwen3 voided 2), and 25 of 60 went to a person ([held-out-claude-sonnet-5-5-2026-11-08.json](held-out-claude-sonnet-5-5-2026-11-08.json)).
 
 Sandbox run `run-20261107034254` (2026-11-07T03:42:54.620Z to 2026-11-07T03:43:41.883Z, `api-m.sandbox.paypal.com`). Every id below was read back with GET. Detail is `docs/sandbox-run.json`.
 
@@ -79,6 +83,8 @@ AI used, and what it did:
 
 No real money moves. The mock never calls PayPal. The sandbox calls only `api-m.sandbox.paypal.com`, and only with a sandbox app's own client id and secret. This repository does not contain those secrets. `.env` is gitignored.
 
+The server at https://vet402-paypal.onrender.com keeps PayPal on the mock and scores with the embedding floor, the same line the screen shows. /api/health returns {"ok":true,"rail":"mock",...,"model":{"phase":"embedding",...}}. On the free plan, the first request takes about 50 seconds while the instance wakes.
+
 ### Mock, no key
 
 1. `npm install`
@@ -115,4 +121,4 @@ MIT. File: `LICENSE` at the repository root. That is the license GitHub shows in
 
 ## Video
 
-(YouTube link added at submission). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.
+https://youtu.be/7sQ_moJ23OU (2:49, English voice and subtitles). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.

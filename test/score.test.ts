@@ -123,6 +123,48 @@ describe("scorer selection", () => {
     expect(error).not.toContain(key);
     expect(error.length).toBeGreaterThan(0);
   });
+
+  it("sends tool_choice auto and thinking between_tools, and does not send temperature", async () => {
+    let body: {
+      tool_choice?: { type: string; name?: string };
+      thinking?: { type: string };
+      temperature?: number;
+      system?: string;
+    } = {};
+    const fetchImpl = vi.fn(async (_url: unknown, init: RequestInit) => {
+      body = JSON.parse(String(init.body)) as typeof body;
+      return new Response(
+        JSON.stringify({
+          content: [{ type: "tool_use", name: "report_score", input: { score: 0.91, reason: "matches the description" } }],
+        }),
+        { status: 200 },
+      );
+    });
+    const scorer = scorerFromEnv(cond, { ANTHROPIC_API_KEY: "sk-ant-test-secret-value" }, fetchImpl as unknown as typeof fetch);
+    await scorer({ conditionDescription: cond.spec.description, data: { records: goodRecords } });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(body.tool_choice).toEqual({ type: "auto" });
+    expect(body.thinking).toEqual({ type: "between_tools" });
+    expect(body.temperature).toBeUndefined();
+    expect(body.system).toContain("Call report_score exactly once.");
+  });
+
+  it("reads report_score when a text block comes before tool_use", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          content: [
+            { type: "text", text: "The delivery matches." },
+            { type: "tool_use", name: "report_score", input: { score: 0.91, reason: "matches the description" } },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const scorer = scorerFromEnv(cond, { ANTHROPIC_API_KEY: "sk-ant-test-secret-value" }, fetchImpl as unknown as typeof fetch);
+    const score = await scorer({ conditionDescription: cond.spec.description, data: { records: goodRecords } });
+    expect(score).toBeCloseTo(0.91);
+  });
 });
 
 describe("judge default scorer", () => {

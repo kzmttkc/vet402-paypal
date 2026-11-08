@@ -62,7 +62,7 @@ const PLAN_TOOL = {
 } as const;
 
 export function parseCount(brief: string): number {
-  const labeled = brief.match(/(\d{1,4})\s*(?:社|件|companies|company|records|record|items|item|deliveries|delivery)\b/i);
+  const labeled = brief.match(/(\d{1,4})\s*(?:\u793e|\u4ef6|companies|company|records|record|items|item|deliveries|delivery)\b/i);
   const any = brief.match(/(\d{1,4})/);
   const raw = Number((labeled ?? any)?.[1]);
   if (!Number.isInteger(raw) || raw < 1) return 1;
@@ -114,19 +114,23 @@ export function priceByCode(budgetCents: number, draft: Draft): JobPlan {
   };
 }
 
-function draftFromModel(payload: unknown, fallback: Draft): Draft {
-  if (payload === null || typeof payload !== "object") return fallback;
+function draftFromModel(payload: unknown, fallback: Draft): { draft: Draft; readTool: boolean } {
+  const missed = { draft: fallback, readTool: false };
+  if (payload === null || typeof payload !== "object") return missed;
   const content = (payload as { content?: unknown }).content;
-  if (!Array.isArray(content)) return fallback;
+  if (!Array.isArray(content)) return missed;
   const tool = content.find((c): c is { type: string; name?: string; input?: unknown } => {
-    return c !== null && typeof c === "object" && (c as { type?: unknown }).type === "tool_use";
+    return (
+      c !== null &&
+      typeof c === "object" &&
+      (c as { type?: unknown }).type === "tool_use" &&
+      (c as { name?: unknown }).name === "report_plan"
+    );
   });
-  if (!tool || tool.name !== "report_plan" || tool.input === null || typeof tool.input !== "object" || Array.isArray(tool.input)) {
-    return fallback;
-  }
-  const input = tool.input as { description?: unknown; items?: unknown; passAt?: unknown; voidBelow?: unknown };
+  if (!tool || tool.input === null || typeof tool.input !== "object" || Array.isArray(tool.input)) return missed;
+  const input = tool.input as { description?: unknown; items?: unknown };
   const description = typeof input.description === "string" && input.description.trim() ? input.description : fallback.description;
-  if (!Array.isArray(input.items)) return { description, items: fallback.items };
+  if (!Array.isArray(input.items)) return { draft: { description, items: fallback.items }, readTool: true };
   const items: DraftItem[] = [];
   for (const raw of input.items) {
     if (raw === null || typeof raw !== "object" || Array.isArray(raw)) continue;
@@ -134,8 +138,8 @@ function draftFromModel(payload: unknown, fallback: Draft): Draft {
     if (typeof row.label !== "string" || typeof row.count !== "number") continue;
     items.push({ label: row.label, count: row.count });
   }
-  if (items.length === 0) return { description, items: fallback.items };
-  return { description, items };
+  if (items.length === 0) return { draft: { description, items: fallback.items }, readTool: true };
+  return { draft: { description, items }, readTool: true };
 }
 
 async function claudeDraft(brief: string, key: string, fetchImpl: FetchLike, model: string): Promise<unknown> {
@@ -150,14 +154,23 @@ async function claudeDraft(brief: string, key: string, fetchImpl: FetchLike, mod
       model,
       max_tokens: 512,
       system:
-        "Draft the work as a description and a list of items with a label and a count. Do not propose prices, totals, or pass thresholds. Call report_plan only.",
+        "Draft the work as a description and a list of items with a label and a count. Do not propose prices, totals, or pass thresholds. Call report_plan only. Always call report_plan.",
       tools: [PLAN_TOOL],
-      tool_choice: { type: "tool", name: "report_plan" },
+      tool_choice: { type: "auto" },
+      thinking: { type: "between_tools" },
       messages: [{ role: "user", content: brief.slice(0, 280) }],
     }),
   });
   if (!res.ok) throw new Error("plan draft failed");
   return res.json();
+}
+
+/** One plan-path call. True only when a report_plan tool_use block was read. */
+export async function fetchClaudePlanTool(brief: string, key: string, fetchImpl: FetchLike, model: string): Promise<boolean> {
+  const text = brief.trim();
+  if (!text) throw new TypeError("brief is required");
+  const fallback = templateDraft(text);
+  return draftFromModel(await claudeDraft(text, key, fetchImpl, model), fallback).readTool;
 }
 
 export async function planJob(
@@ -175,7 +188,7 @@ export async function planJob(
     const fetchImpl = opts.fetch ?? ((url, init) => fetch(url, init));
     const model = env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-5-5";
     try {
-      draft = draftFromModel(await claudeDraft(text, key, fetchImpl, model), fallback);
+      draft = draftFromModel(await claudeDraft(text, key, fetchImpl, model), fallback).draft;
     } catch {
       draft = fallback;
     }

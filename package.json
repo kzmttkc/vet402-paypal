@@ -18,6 +18,8 @@
     "screens:static": "tsx scripts/static-screens.ts",
     "screens": "tsx scripts/screenshots.ts",
     "eval": "node --no-deprecation --import tsx eval/run.ts",
+    "eval:claude": "node --no-deprecation --import tsx eval/held-out-claude.ts",
+    "smoke:claude": "node --no-deprecation --import tsx eval/claude-smoke.ts",
     "mcp": "node --no-deprecation --import tsx src/mcp/main.ts",
     "sellers": "node --no-deprecation --import tsx scripts/seller-totals.ts",
     "fetch:export": "node --no-deprecation --import tsx scripts/fetch-export.ts",
