@@ -27,6 +27,8 @@ export interface TruthRow {
   itemId: string;
   name: string;
   mark: "PASS" | "FAIL";
+  /** Judge reason code already stored on the ledger. The screen turns it into a sentence. */
+  reason: string;
   capturedCents: number;
   releasedCents: number;
 }
@@ -55,6 +57,21 @@ export function recordPrices(holdCents: number, count: number): number[] {
     leftover -= extra;
     return base + extra;
   });
+}
+
+/** Reason codes the judge already wrote. Reading them does not judge again. */
+function reasonByItem(engine: PaymentEngine, jobId: string): Map<string, string> {
+  const reasons = new Map<string, string>();
+  for (const entry of engine.ledger.ofJob(jobId)) {
+    const judged = entry.data.judged;
+    if (judged === null || typeof judged !== "object" || Array.isArray(judged)) continue;
+    for (const [itemId, detail] of Object.entries(judged)) {
+      if (detail === null || typeof detail !== "object" || Array.isArray(detail)) continue;
+      const reason = detail.reason;
+      if (typeof reason === "string" && reason.length > 0) reasons.set(itemId, reason);
+    }
+  }
+  return reasons;
 }
 
 /** Capture for the first `passed` records. The rest of the hold is what final_capture releases. */
@@ -117,6 +134,7 @@ export async function settlePayPerTruth(
 
   const snap = engine.job(jobId);
   const outcomes = snap?.outcomes ?? {};
+  const reasons = reasonByItem(engine, jobId);
   const capturedForReal = result.status === "captured" && result.capturedCents > 0;
   let capturedRunning = 0;
   let releasedRunning = 0;
@@ -124,7 +142,14 @@ export async function settlePayPerTruth(
     const mark = capturedForReal && outcomes[item.itemId] === "capture" ? "PASS" : "FAIL";
     if (mark === "PASS") capturedRunning += item.priceCents;
     else releasedRunning += item.priceCents;
-    return { itemId: item.itemId, name: names[i]!, mark, capturedCents: capturedRunning, releasedCents: releasedRunning };
+    return {
+      itemId: item.itemId,
+      name: names[i]!,
+      mark,
+      reason: reasons.get(item.itemId) ?? "",
+      capturedCents: capturedRunning,
+      releasedCents: releasedRunning,
+    };
   });
 
   const capturedCents = result.capturedCents;

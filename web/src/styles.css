@@ -316,6 +316,14 @@ textarea, input[type="text"] {
   padding: 0;
 }
 
+/* Last passing row, plus every released row, including names that wrap on a narrow column. */
+[data-testid="pay-per-truth-tape"] {
+  max-height: calc(14 * (1.55em + 0.9rem + 1px) + 9 * 1.55em + 8px);
+  overflow-y: auto;
+}
+
+.tape-reason { margin-inline-start: 0.75rem; }
+
 .tape li, .receipt > li {
   display: flex;
   justify-content: space-between;

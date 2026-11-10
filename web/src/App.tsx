@@ -145,7 +145,10 @@ function TruthTape({
           <ol className="tape" ref={listRef} data-testid="pay-per-truth-tape">
             {rows.map((row) => (
               <li key={row.itemId}>
-                <span>{row.name}</span>
+                <span>
+                  {row.name}
+                  {row.mark === "FAIL" ? <span className="mark-fail tape-reason">{reasonSentence(copy.lang, row.reason)}</span> : null}
+                </span>
                 <span className={row.mark === "PASS" ? "mark-pass" : "mark-fail"}>{row.mark}</span>
               </li>
             ))}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { reasonSentence } from "../src/i18n/copy.js";
 import { createApp } from "../src/server/app.js";
-import { passedCaptureCents, settlePayPerTruth, truthLine } from "../src/pay/truth.js";
+import { passedCaptureCents, settlePayPerTruth, truthLine, type TruthResult } from "../src/pay/truth.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
 import { setup, T0 } from "./helpers.js";
 
@@ -84,5 +85,28 @@ describe("pay per truth", () => {
     expect(json.holdCents).toBe(HOLD);
     expect(json.capturedCents * COUNT).toBe(PASSED * HOLD);
     expect(json.line).toBe("Captured $37.00 of $50.00. $13.00 released.");
+  });
+
+  it("lists one FAIL row per released dollar, in arrival order, with the judge's reason", async () => {
+    const app = createApp({ rail: new MockPayPalRail({ now: () => T0 }), now: () => T0 });
+    const res = await app.request("/api/pay-per-truth", { method: "POST", body: "{}" });
+    const json = (await res.json()) as TruthResult;
+    expect(res.status).toBe(200);
+    expect(json.line).toBe("Captured $37.00 of $50.00. $13.00 released.");
+    const fails = json.rows.filter((row) => row.mark === "FAIL");
+    expect(fails.length).toBeGreaterThan(0);
+    expect(json.releasedCents).toBe(1_300);
+    expect(fails).toHaveLength(json.releasedCents / 100);
+    expect(json.rows).toHaveLength(COUNT);
+    expect(json.rows.map((row) => row.mark)).toEqual([
+      ...Array.from({ length: PASSED }, () => "PASS" as const),
+      ...Array.from({ length: COUNT - PASSED }, () => "FAIL" as const),
+    ]);
+    for (const row of fails) {
+      expect(row.reason).toBe("empty_200");
+      expect(reasonSentence("en", row.reason)).toBe("The body was empty.");
+      expect(reasonSentence("ja", row.reason)).toBe("本文が空でした。");
+    }
+    expect(fails.at(-1)?.releasedCents).toBe(json.releasedCents);
   });
 });
