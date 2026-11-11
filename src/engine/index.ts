@@ -199,6 +199,8 @@ export class PaymentEngine {
 
     const cond = this.conditions.get(job.req.conditionId);
     const judged: { [k: string]: JsonValue } = {};
+    // Identical deliveries in this call share one verdict. Thresholds and the scorer stay as they are.
+    const seen = new Map<string, { outcome: Outcome; reason: string; score: number | null }>();
     for (const item of job.req.items) {
       if (job.outcomes.has(item.itemId)) continue;
       const d = deliveries[item.itemId];
@@ -207,9 +209,15 @@ export class PaymentEngine {
         judged[item.itemId] = { outcome: "void", reason: "not_delivered" };
         continue;
       }
-      const v = await judge(cond, d, this.scorer);
-      job.outcomes.set(item.itemId, v.outcome);
-      judged[item.itemId] = { outcome: v.outcome, reason: v.reason, score: v.score };
+      const key = `${d.httpStatus}\n${d.latencyMs}\n${d.body}`;
+      let prior = seen.get(key);
+      if (!prior) {
+        const v = await judge(cond, d, this.scorer);
+        prior = { outcome: v.outcome, reason: v.reason, score: v.score };
+        seen.set(key, prior);
+      }
+      job.outcomes.set(item.itemId, prior.outcome);
+      judged[item.itemId] = { outcome: prior.outcome, reason: prior.reason, score: prior.score };
     }
     const waiting = job.req.items.filter((i) => job.outcomes.get(i.itemId) === "human").map((i) => i.itemId);
     if (waiting.length) {

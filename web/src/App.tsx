@@ -19,6 +19,7 @@ import {
   scoreLine,
   scoreModelLine,
   screenJob,
+  simulatedPlayLine,
   type Copy,
   type Lang,
   type PageScorePhase,
@@ -155,7 +156,7 @@ function TruthTape({
           </ol>
           {finished && (
             <p className="summary" data-testid="pay-per-truth-line">
-              {run.line}
+              {simulatedPlayLine(run.line)}
             </p>
           )}
         </>
@@ -457,12 +458,16 @@ export function App({ simulated = false }: { simulated?: boolean }) {
       {
         field: "reason",
         headerName: copy.colReason,
-        width: 480,
+        width: 196,
+        minWidth: 196,
+        maxWidth: 196,
+        wrapText: true,
+        autoHeight: true,
         valueFormatter: (p) => reasonSentence(copy.lang, String(p.value ?? "")),
       },
-      { field: "count", headerName: copy.colCount, width: 110 },
-      { headerName: copy.colWaiting, width: 120, valueGetter: (p) => waitingLabel(p.data?.waitingMs ?? 0) },
-      { field: "hold", headerName: copy.colHold, width: 110 },
+      { field: "count", headerName: copy.colCount, width: 80, minWidth: 80, maxWidth: 80, filter: false },
+      { headerName: copy.colWaiting, width: 80, minWidth: 80, maxWidth: 80, filter: false, valueGetter: (p) => waitingLabel(p.data?.waitingMs ?? 0) },
+      { field: "hold", headerName: copy.colHold, width: 80, minWidth: 80, maxWidth: 80, filter: false },
       {
         field: "kind",
         headerName: copy.colKind,
@@ -821,7 +826,6 @@ export function App({ simulated = false }: { simulated?: boolean }) {
                     domLayout="autoHeight"
                     getRowId={(p) => p.data.jobId}
                     headerHeight={36}
-                    rowHeight={46}
                     suppressCellFocus={false}
                     animateRows={false}
                   />

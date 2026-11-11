@@ -548,7 +548,7 @@ export function presentKind(lang: Lang, kind: string): string {
 }
 
 export function presentDecision(lang: Lang, decision: string): string {
-  if (lang === "en") return decision;
+  if (lang === "en") return decision === "void" ? "VOIDED" : decision;
   return DECISIONS[decision] ?? decision;
 }
 
@@ -705,7 +705,33 @@ export function holdsWaitingLine(lang: Lang, count: number): string {
   return count === 1 ? "1 hold waiting" : `${count} holds waiting`;
 }
 
+/** The Nov 7 ticker is a saved sandbox record. The prefix says so before the amounts. */
+export function sandboxRunBand(ticker: string): string {
+  const head = "Sandbox · ";
+  const rest = ticker.startsWith(head) ? ticker.slice(head.length) : ticker;
+  return `Sandbox run, Nov 7 · ${rest}`;
+}
+
+/** The Nov 10 judged sandbox record, on the line under the Nov 7 band. */
+export function judgedRunBand(lang: Lang): string {
+  if (lang === "ja") {
+    return "サンドボックスの実行（11/10）・判定が 50 件中 40 件を通過・$50.00 のうち $40.00 を確定・capture 5DC328323E0217202";
+  }
+  return "Sandbox run, Nov 10 · the judge passed 40 of 50 · captured $40.00 of $50.00 · capture 5DC328323E0217202";
+}
+
+/** The simulated banner's word, in front of a Play result. The amount sentence stays as it is. */
+export function simulatedPlayLine(line: string): string {
+  return line.startsWith("Simulated:") ? line : `Simulated: ${line}`;
+}
+
 export function activitySentence(lang: Lang, type: string, opts?: { replay?: boolean; verdict?: string | null }): string {
+  if (type === "voided_holds") {
+    const parsed = Number(opts?.verdict);
+    const count = Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
+    if (lang === "ja") return `開いていた与信を ${count} 件取り消しました。`;
+    return count === 1 ? "Voided 1 open hold." : `Voided ${count} open holds.`;
+  }
   const en: Record<string, string> = {
     authorize: "PayPal placed a hold. Nothing is captured until the delivery is checked.",
     capture: "PayPal captured the part that passed and released the rest.",

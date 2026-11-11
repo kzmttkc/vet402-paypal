@@ -6,6 +6,8 @@ import { planJob, type PlanItem } from "../plan/job.js";
 import { formatUsd } from "../policy/money.js";
 import { PolicyStore } from "../policy/mandate.js";
 import { MockPayPalRail } from "../rail/mock.js";
+import { railFromEnv, type RailEnv } from "../rail/select.js";
+import type { PayPalRail } from "../rail/types.js";
 import { ConditionRegistry } from "../verify/condition.js";
 import { judge, type Delivery } from "../verify/judge.js";
 
@@ -26,19 +28,24 @@ function idsOf(data: { [k: string]: unknown }): { orderId: string | null; author
 }
 
 /**
- * One MCP process, one mock PayPal rail. Holds are not placed and deliveries
+ * One MCP process. PAYPAL_ENV=sandbox selects the PayPal sandbox rail.
+ * Any other value keeps the in-memory mock. Holds are not placed and deliveries
  * are not settled unless the caller passes confirm: true.
  */
 export class PaypalSession {
-  private readonly rail = new MockPayPalRail({ now: () => this.now() });
+  private readonly rail: PayPalRail;
+  readonly railName: string;
   private readonly conditions = new ConditionRegistry();
   private readonly conditionId: string;
   private readonly jobs = new Map<string, Planned>();
   private stopped = false;
   private readonly now: () => number;
 
-  constructor(now: () => number = () => Date.now()) {
+  constructor(now: () => number = () => Date.now(), env: RailEnv = process.env) {
     this.now = now;
+    const mode = (env.PAYPAL_ENV ?? "").trim().toLowerCase();
+    this.rail = mode === "sandbox" ? railFromEnv(env) : new MockPayPalRail({ now: () => this.now() });
+    this.railName = this.rail.name;
     this.conditionId = this.conditions.register(COMPANY_RECORDS);
   }
 

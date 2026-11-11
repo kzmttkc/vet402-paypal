@@ -1,0 +1,324 @@
+{
+  "at": "2026-11-10T15:29:30.715Z",
+  "holdCents": 5000,
+  "capturedCents": 4000,
+  "releasedCents": 1000,
+  "records": [
+    {
+      "itemId": "rec-01",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-02",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-03",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-04",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-05",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-06",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-07",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-08",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-09",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-10",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-11",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-12",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-13",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-14",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-15",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-16",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-17",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-18",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-19",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-20",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-21",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-22",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-23",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-24",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-25",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-26",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-27",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-28",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-29",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-30",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-31",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-32",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-33",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-34",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-35",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-36",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-37",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-38",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-39",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-40",
+      "outcome": "capture",
+      "reason": "ok",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-41",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-42",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-43",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-44",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-45",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-46",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-47",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-48",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-49",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    },
+    {
+      "itemId": "rec-50",
+      "outcome": "void",
+      "reason": "empty_200",
+      "priceCents": 100
+    }
+  ],
+  "readBack": {
+    "order": {
+      "id": "11W5595849856012J",
+      "status": "COMPLETED"
+    },
+    "authorization": {
+      "id": "18T212085G8511441",
+      "status": "CAPTURED"
+    },
+    "capture": {
+      "id": "5DC328323E0217202",
+      "status": "COMPLETED",
+      "amountCents": 4000,
+      "finalCapture": true
+    }
+  }
+}

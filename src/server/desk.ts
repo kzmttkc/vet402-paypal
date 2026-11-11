@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { COMPANY_RECORDS } from "../../eval/condition.js";
-import { Ledger, type JsonValue } from "../ledger/index.js";
+import { canonicalJson, Ledger, sha256Hex, type JsonValue } from "../ledger/index.js";
 import { PaymentEngine, type JobStatus } from "../engine/index.js";
 import { formatUsd } from "../policy/money.js";
 import { PolicyStore, type Autonomy } from "../policy/mandate.js";
@@ -173,7 +173,7 @@ function summaryOf(status: JobStatus | "planned", hold: number, captured: number
 
 /**
  * One screen's worth of jobs. Each job has its own mandate (budget and autonomy).
- * They share one PayPal rail. The stop switch covers every open authorization.
+ * They share one PayPal rail. The stop switch voids every open authorization and every sample hold still waiting.
  */
 export class Desk {
   readonly railName: string;
@@ -192,6 +192,8 @@ export class Desk {
 
   private readonly onScamWin: ((win: ScamWin) => void) | undefined;
   private readonly scamWins: ScamWin[] = [];
+  /** Set once, the first time stop closes the holds that were still open. */
+  private voidedHoldsNote: { count: number; ts: number } | null = null;
 
   constructor(opts: {
     rail: PayPalRail;
@@ -411,12 +413,17 @@ export class Desk {
   }
 
   async emergencyStop(reason = "owner pressed stop"): Promise<string[]> {
+    const openHolds = new Set(this.review().rows.filter((row) => row.decision === "open").map((row) => row.jobId));
     this.stopped = true;
+    for (const sample of this.samples) {
+      if (sample.decision === "open") sample.decision = "void";
+    }
     const voided: string[] = [];
     for (const job of this.jobs.values()) {
       if (!job.engine) continue;
       voided.push(...(await job.engine.emergencyStop(reason)));
     }
+    if (this.voidedHoldsNote === null) this.voidedHoldsNote = { count: openHolds.size, ts: this.now() };
     return voided;
   }
 
@@ -485,6 +492,21 @@ export class Desk {
           hash: e.hash,
         });
       }
+    }
+    if (this.voidedHoldsNote) {
+      const note = this.voidedHoldsNote;
+      entries.push({
+        seq: 2_000_000_000,
+        ts: note.ts,
+        jobId: null,
+        type: "voided_holds",
+        orderId: null,
+        authorizationId: null,
+        captureId: null,
+        refundId: null,
+        verdict: String(note.count),
+        hash: sha256Hex(canonicalJson({ type: "voided_holds", count: note.count, ts: note.ts })),
+      });
     }
     return { entries, chains };
   }

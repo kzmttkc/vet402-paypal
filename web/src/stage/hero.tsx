@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Copy } from "../../../src/i18n/copy.js";
+import { judgedRunBand, sandboxRunBand, simulatedPlayLine, type Copy } from "../../../src/i18n/copy.js";
 import { FROZEN_EXPORT, tickerLine } from "../../../src/demo/nov7.js";
 import { formatUsd } from "../../../src/policy/money.js";
 import type { TruthResult } from "../../../src/pay/truth.js";
@@ -52,7 +52,9 @@ export function Hero({
   }, [result]);
 
   const resultLine = result
-    ? `Captured ${formatUsd(shownCents)} of ${formatUsd(result.holdCents)}. ${formatUsd(Math.max(0, result.holdCents - shownCents))} released.`
+    ? simulatedPlayLine(
+        `Captured ${formatUsd(shownCents)} of ${formatUsd(result.holdCents)}. ${formatUsd(Math.max(0, result.holdCents - shownCents))} released.`,
+      )
     : null;
 
   return (
@@ -68,7 +70,10 @@ export function Hero({
       </p>
       <hr className="rule" />
       <p className="band" data-testid="fact-ticker">
-        {tickerLine()}
+        {sandboxRunBand(tickerLine())}
+      </p>
+      <p className="band" data-testid="judged-run">
+        {judgedRunBand(copy.lang)}
       </p>
       {resultLine ? (
         <p className="hero-result" data-testid="hero-result">

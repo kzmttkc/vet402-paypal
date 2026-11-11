@@ -11,7 +11,7 @@ function fail(error: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify({ error: message }) }], isError: true as const };
 }
 
-/** MCP tools over the mock rail. place_hold and settle_job wait for confirm: true. */
+/** MCP tools. place_hold and settle_job wait for confirm: true. The rail follows PAYPAL_ENV. */
 export function createMcpServer(session = new PaypalSession()): McpServer {
   const server = new McpServer({ name: "vet402-paypal", version: "0.0.1" });
 

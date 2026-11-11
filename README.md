@@ -1,6 +1,6 @@
 # vet402 × PayPal
 
-An agent buys data through PayPal and pays only for what passed a fixed check: one authorization, a capture of the passing part, and final_capture=true releases the rest. An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives. PayPal Orders v2 places the hold (`intent=AUTHORIZE`). Payments v2 then captures only the sum that passed the check, and `final_capture=true` closes the rest of the hold. Example: at that rate, an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same. In the Play demo, the agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released. Try it: https://kzmttkc.github.io/vet402-paypal/ (press Play). Video: https://youtu.be/7sQ_moJ23OU (2:49).
+An agent buys data through PayPal and pays only for what passed a fixed check: one authorization, a capture of the passing part, and final_capture=true releases the rest. An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives. PayPal Orders v2 places the hold (`intent=AUTHORIZE`). Payments v2 then captures only the sum that passed the check, and `final_capture=true` closes the rest of the hold. Example: at that rate, an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same. In the Play demo, the agent holds $50 with PayPal and pays only for what passed: Captured $37.00 of $50.00. $13.00 released. Try it: https://kzmttkc.github.io/vet402-paypal/ (press Play). Video: https://youtu.be/Y05Yi9bspAg (2:49).
 
 Pay per truth: one hold on the job, then capture only the records that passed and release the rest.
 Scam my agent: a browser page where a judge sends a fake delivery and sees the outcome, the reason, and $0.00 when it fails.
@@ -123,6 +123,8 @@ With `ANTHROPIC_API_KEY` set, Claude (`claude-sonnet-5-5`) scores the same 60 na
 
 `docs/sandbox-run.json` is one pass against `api-m.sandbox.paypal.com` on 2026-11-07. Run id `run-20261107034254`, started 2026-11-07T03:42:54.620Z, finished 2026-11-07T03:43:41.883Z. The file says every id and status was read back with GET after the call that made it. No live charge. The card is PayPal's public test card `4012888888881881`.
 
+`docs/sandbox-judged-run.json` is a second pass on 2026-11-10 where the judge decided the amount: 50 records at $1.00, 40 passed the code rules and the local Qwen3 score, 10 empty 200s were refused, and one $40.00 capture with `final_capture=true` (`5DC328323E0217202`, COMPLETED) released $10.00 of the $50.00 authorization `18T212085G8511441`. `scripts/sandbox-judged.ts` reruns it.
+
 | Case | What the file records |
 |---|---|
 | a | Authorize $20.00 and capture $20.00. Order `2ES415235E815594L` COMPLETED. Authorization `4C53391800550971K` CAPTURED. Capture `30045445DC8145221` COMPLETED, `final_capture` true. |
@@ -138,7 +140,7 @@ With `ANTHROPIC_API_KEY` set, Claude (`claude-sonnet-5-5`) scores the same 60 na
 
 ## MCP
 
-`npm run mcp` speaks MCP on stdin and stdout. The rail is the mock. It needs no PayPal key.
+`npm run mcp` speaks MCP on stdin and stdout. By default the rail is the mock and needs no PayPal key. With `PAYPAL_ENV=sandbox` and the sandbox client id and secret in the environment, `npm run mcp` places real sandbox authorizations, still only after `confirm` is true.
 
 | Tool | What it does |
 |---|---|

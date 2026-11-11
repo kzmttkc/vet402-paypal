@@ -1,4 +1,4 @@
-An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). Here the agent pays the seller through PayPal only for the part that passed. A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives.
+An agent that pays for data gets a broken answer about one time in eight (1,826 of 13,893 settled purchases in vet402's export frozen on 2026-11-07). It is for a person who lets an agent buy data and needs the payment to stop when the body is empty, the wrong shape, an HTTP error, or late. Here the agent pays the seller through PayPal only for the part that passed. A spending mandate limits what an agent may spend. This limits what it pays for after the delivery arrives.
 PayPal Orders v2 places the hold (`intent=AUTHORIZE`). Payments v2 then captures only the sum that passed the check, and `final_capture=true` closes the rest of the hold.
 Example: at that rate, an agent spending $2,000 a month on data pays about $263 of it for broken answers, if every purchase costs the same.
 
@@ -24,7 +24,7 @@ The seller line and the eval mix read `data/observatory_export.csv` (22,071 rows
 
 The default score is a local Qwen3-0.6B (ONNX, q4f16, no key). Claude drafts a plan or replaces that score only when `ANTHROPIC_API_KEY` is set. The published eval did not call Claude. The static page is too small for the 570MB weights. It uses the recorded Qwen3 answers plus all-MiniLM-L6-v2, and captures only when both agree. It says so.
 
-AG Grid is the list where a person decides: each held delivery is a row, and Capture or Void settles that PayPal authorization.
+AG Grid is the list where a person decides: one row is one hold, with its records, waiting time, and amount, and Capture all or Void all settles that PayPal authorization.
 
 `render.yaml` is the one-click deploy setting for the server version on Render's free plan (Deploy to Render button in the README). It sets `SCORER=embedding`, so starting the service does not download Qwen3.
 
@@ -49,6 +49,7 @@ Sandbox run `run-20261107034254` (2026-11-07T03:42:54.620Z to 2026-11-07T03:43:4
 - $12.50 captured on a $50.00 authorization (`27224167CR8866647` reads CAPTURED).
 - A voided authorization (`00N1620869359422G`) refuses a later capture with `AUTHORIZATION_VOIDED`.
 - A vaulted Visa (last digits 1881, payment token `7p2918019c535510e`) authorizes and captures $25.00 with the buyer away.
+- On 2026-11-10 the judge settled a $50.00 sandbox hold by itself: 50 records at $1.00, the code rules and the local Qwen3 score passed 40 and refused 10 empty 200s, and one $40.00 capture with `final_capture=true` (`5DC328323E0217202` reads COMPLETED) released $10.00. Detail is `docs/sandbox-judged-run.json` (`scripts/sandbox-judged.ts`).
 
 ## What I learned
 
@@ -119,4 +120,4 @@ MIT. File: `LICENSE` at the repository root. That is the license GitHub shows in
 
 ## Video
 
-https://youtu.be/7sQ_moJ23OU (2:49, English voice and subtitles). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.
+https://youtu.be/Y05Yi9bspAg (2:49, English voice and subtitles). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.

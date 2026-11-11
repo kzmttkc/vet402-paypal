@@ -350,6 +350,7 @@ textarea, input[type="text"] {
 .review-grid {
   --ag-font-family: "Fragment Mono", ui-monospace, monospace;
   --ag-font-size: 13px;
+  --ag-cell-horizontal-padding: 8px;
   --ag-background-color: #ffffff;
   --ag-foreground-color: #233456;
   --ag-secondary-foreground-color: #3e537c;
@@ -368,6 +369,21 @@ textarea, input[type="text"] {
   --ag-popup-shadow: none;
   width: 100%;
   height: auto;
+}
+
+.review-grid .ag-cell-wrap-text {
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.review-grid .ag-cell-wrap-text .ag-cell-wrapper {
+  align-items: flex-start;
+}
+
+.review-grid .ag-cell-wrap-text .ag-cell-value {
+  white-space: normal;
+  word-break: break-word;
+  text-overflow: clip;
 }
 
 .cell-actions { display: flex; gap: 0.35rem; }
