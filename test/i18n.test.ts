@@ -37,6 +37,10 @@ describe("screen language", () => {
     expect(copyFor("en").heroTitle).toBe("Pay only for what arrived.");
     expect(copyFor("ja").heroTitle).toBe("届いた分だけ払う。");
     expect(copyFor("ja").heroLine).not.toBe(copyFor("en").heroLine);
+    expect(copyFor("en").heroFor).toBe(
+      "It is for a person who lets an agent buy data and needs the payment to stop when the body is empty, the wrong shape, an HTTP error, or late.",
+    );
+    expect(copyFor("ja").heroFor).not.toBe(copyFor("en").heroFor);
     expect(scoreModelLine("en", { phase: "ready" })).toContain("embedding");
     expect(scoreModelLine("ja", { phase: "ready" })).toContain("埋め込み");
     expect(scoreModelLine("ja", { phase: "download", ratio: 0.4 })).toContain("40%");

@@ -68,6 +68,9 @@ export function Hero({
       <p className="hero-line" data-testid="hero-line">
         {copy.heroLine}
       </p>
+      <p className="hero-line" data-testid="hero-for">
+        {copy.heroFor}
+      </p>
       <hr className="rule" />
       <p className="band" data-testid="fact-ticker">
         {sandboxRunBand(tickerLine())}

@@ -4,6 +4,7 @@ import type { TruthResult } from "../../src/pay/truth.js";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import {
+  activityCaptureLine,
   activitySentence,
   copyFor,
   deliverySentence,
@@ -171,7 +172,7 @@ function HoldActionCell(props: ICellRendererParams<HoldView, unknown, { onDecide
   if (!row) return null;
   if (row.decision !== "open") return <span>{presentDecision(copy.lang, row.decision)}</span>;
   return (
-    <div className="cell-actions">
+    <div className="cell-actions" data-testid={row.kind === "live" ? "live-hold" : undefined}>
       <button type="button" onClick={() => props.context.onDecideHold(row.jobId, "capture")}>
         {copy.captureAll}
       </button>
@@ -754,12 +755,14 @@ export function App({ simulated = false }: { simulated?: boolean }) {
               </p>
             ) : (
               <ol className="receipt" data-testid="activity">
-                {activity.map((entry) => (
-                  <li key={`${entry.jobId ?? "none"}-${entry.seq}`}>
-                    <p>{activitySentence(lang, entry.type, { replay: simulated || health?.rail !== "sandbox", verdict: entry.verdict })}</p>
-                    <details>
-                      <summary>{copy.details}</summary>
-                      <dl className="meta">
+                {activity.map((entry) => {
+                  const amount = activityCaptureLine(lang, entry);
+                  return (
+                    <li key={`${entry.jobId ?? "none"}-${entry.seq}`}>
+                      <p>{activitySentence(lang, entry.type, { replay: simulated || health?.rail !== "sandbox", verdict: entry.verdict })}</p>
+                      <details>
+                        <summary>{copy.details}</summary>
+                        <dl className="meta">
                         {entry.orderId && (
                           <div>
                             <dt>{copy.order}</dt>
@@ -788,10 +791,16 @@ export function App({ simulated = false }: { simulated?: boolean }) {
                           <dt>{copy.colHash}</dt>
                           <dd className="id">{entry.hash}</dd>
                         </div>
-                      </dl>
-                    </details>
-                  </li>
-                ))}
+                        </dl>
+                        {amount ? (
+                          <p className="summary" data-testid="activity-captured">
+                            {amount}
+                          </p>
+                        ) : null}
+                      </details>
+                    </li>
+                  );
+                })}
               </ol>
             )}
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activitySentence } from "../src/i18n/copy.js";
+import { activityCaptureLine, activitySentence, reasonSentence } from "../src/i18n/copy.js";
 import { holdViews, waitingLabel } from "../src/review/holds.js";
 import { createApp } from "../src/server/app.js";
 import { MockPayPalRail } from "../src/rail/mock.js";
@@ -77,5 +77,55 @@ describe("one row per hold", () => {
     const entries = act.json.entries as { type: string; verdict: string | null }[];
     const lines = entries.map((entry) => activitySentence("en", entry.type, { replay: true, verdict: entry.verdict }));
     expect(lines.some((line) => line.startsWith("PayPal captured"))).toBe(true);
+  });
+
+  it("puts one late automatic hold at the end of the person list and capture all records the amount", async () => {
+    const a = app();
+    const planned = await post(a, "/api/jobs", {
+      brief: "Collect company records",
+      budgetCents: 5_000,
+      autonomy: "autopilot",
+      seller: "established",
+    });
+    const jobId = planned.json.jobId as string;
+    await post(a, `/api/jobs/${jobId}/approve`);
+    const settled = await post(a, `/api/jobs/${jobId}/settle`, { mode: "unsure" });
+    expect(settled.json.status).toBe("needs_human");
+
+    const review = await get(a, "/api/review");
+    const rows = review.json.rows as ReviewRow[];
+    const holds = holdViews(rows);
+    const live = holds.filter((hold) => hold.jobId === jobId);
+    expect(live).toHaveLength(1);
+    expect(holds.at(-1)?.jobId).toBe(jobId);
+    expect(live[0]).toMatchObject({
+      count: 50,
+      hold: "$50.00",
+      holdCents: 5_000,
+      reason: "late",
+      kind: "live",
+      decision: "open",
+    });
+    expect(reasonSentence("en", live[0]!.reason)).toBe("The reply was later than the condition allows.");
+
+    const decided = await post(a, `/api/review/${jobId}`, { decision: "capture" });
+    expect(decided.status).toBe(200);
+    const act = await get(a, "/api/activity");
+    const entries = act.json.entries as {
+      type: string;
+      verdict: string | null;
+      capturedCents?: number;
+      holdCents?: number;
+    }[];
+    const captured = entries.filter((entry) => entry.type === "capture");
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).toMatchObject({ capturedCents: 5_000, holdCents: 5_000 });
+    expect(activitySentence("en", "capture", { replay: false, verdict: null })).toBe(
+      "PayPal captured the part that passed and released the rest.",
+    );
+    expect(activityCaptureLine("en", captured[0]!)).toBe("Captured $50.00 of $50.00. $0.00 released.");
+    expect(activityCaptureLine("en", { type: "authorize" })).toBeNull();
+    expect(activityCaptureLine("en", { type: "capture" })).toBeNull();
+    expect(activityCaptureLine("ja", captured[0]!)).not.toBe(activityCaptureLine("en", captured[0]!));
   });
 });

@@ -120,4 +120,4 @@ MIT. File: `LICENSE` at the repository root. That is the license GitHub shows in
 
 ## Video
 
-https://youtu.be/Y05Yi9bspAg (2:49, English voice and subtitles). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.
+https://youtu.be/a69W_SbAdYY (2:49, English voice and subtitles). The script is under three minutes, in English, and lists the screens to record: [VIDEO.md](VIDEO.md). It uses no copyrighted music. Footage is the program running on a desktop browser.

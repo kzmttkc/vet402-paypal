@@ -88,6 +88,9 @@ export interface ActivityEntry {
   refundId: string | null;
   verdict: string | null;
   hash: string;
+  /** Set on a capture whose ledger line has both amounts. */
+  capturedCents?: number;
+  holdCents?: number;
 }
 
 interface Sample {
@@ -139,6 +142,25 @@ function splitBudget(cents: number): { itemId: string; label: string; priceCents
 function asString(data: { [k: string]: JsonValue }, key: string): string | null {
   const v = data[key];
   return typeof v === "string" ? v : null;
+}
+
+function wholeCents(data: { [k: string]: JsonValue }, key: string): number | null {
+  const v = data[key];
+  return typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : null;
+}
+
+/** Capture rows keep the amount that passed and the hold it came from. Other rows stay without amounts. */
+function captureAmounts(
+  type: string,
+  data: { [k: string]: JsonValue },
+): { capturedCents: number; holdCents: number } | undefined {
+  if (type !== "capture") return undefined;
+  const captured = wholeCents(data, "capturedCents") ?? wholeCents(data, "amountCents");
+  const held = wholeCents(data, "holdCents");
+  const released = wholeCents(data, "releasedCents");
+  const hold = held ?? (captured !== null && released !== null ? captured + released : null);
+  if (captured === null || hold === null || hold < captured) return undefined;
+  return { capturedCents: captured, holdCents: hold };
 }
 
 function verdictOf(data: { [k: string]: JsonValue }): string | null {
@@ -479,6 +501,7 @@ export class Desk {
       const check = job.engine.ledger.verifyChain();
       chains.push({ jobId: job.jobId, headHash: job.engine.ledger.headHash, ok: check.ok });
       for (const e of job.engine.ledger.entries()) {
+        const amounts = captureAmounts(e.type, e.data);
         entries.push({
           seq: e.seq,
           ts: e.ts,
@@ -490,6 +513,7 @@ export class Desk {
           refundId: asString(e.data, "refundId"),
           verdict: verdictOf(e.data),
           hash: e.hash,
+          ...amounts,
         });
       }
     }

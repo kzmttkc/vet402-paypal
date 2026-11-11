@@ -30,6 +30,7 @@ export interface Copy {
   truthPlay: string;
   heroTitle: string;
   heroLine: string;
+  heroFor: string;
   replayButton: string;
   replayNote: string;
   replayClock: string;
@@ -180,6 +181,8 @@ const EN: Copy = {
   truthPlay: "Play",
   heroTitle: "Pay only for what arrived.",
   heroLine: "of 13,893 settled purchases were broken. Frozen on 2026-11-07.",
+  heroFor:
+    "It is for a person who lets an agent buy data and needs the payment to stop when the body is empty, the wrong shape, an HTTP error, or late.",
   replayButton: "Replay Nov 7",
   replayNote: "Recorded replay of the sandbox run. This page does not call PayPal.",
   replayClock: "The file stored only the start and the finish. Steps play in the order they were written.",
@@ -325,6 +328,7 @@ const JA: Copy = {
   truthPlay: "再生",
   heroTitle: "届いた分だけ払う。",
   heroLine: "決済済み 13,893 件のうち、壊れた応答です。2026-11-07 に凍結した書き出し。",
+  heroFor: "エージェントにデータを買わせていて、本文が空・形が違う・HTTP エラー・遅延のときは支払いを止めたい人のためのものです。",
   replayButton: "11月7日を再生",
   replayNote: "記録したサンドボックス実行の再生です。この画面は PayPal を呼びません。",
   replayClock: "ファイルに残っている時刻は開始と終了だけです。手順は書かれた順に再生します。",
@@ -723,6 +727,24 @@ export function judgedRunBand(lang: Lang): string {
 /** The simulated banner's word, in front of a Play result. The amount sentence stays as it is. */
 export function simulatedPlayLine(line: string): string {
   return line.startsWith("Simulated:") ? line : `Simulated: ${line}`;
+}
+
+/** Amount under a capture line. Absent when the record has no captured and hold cents. */
+export function activityCaptureLine(
+  lang: Lang,
+  entry: { type: string; capturedCents?: number | null; holdCents?: number | null },
+): string | null {
+  if (entry.type !== "capture") return null;
+  const capturedCents = entry.capturedCents;
+  const holdCents = entry.holdCents;
+  if (typeof capturedCents !== "number" || typeof holdCents !== "number") return null;
+  if (!Number.isInteger(capturedCents) || !Number.isInteger(holdCents)) return null;
+  if (capturedCents < 0 || holdCents < capturedCents) return null;
+  const captured = formatUsd(capturedCents);
+  const hold = formatUsd(holdCents);
+  const released = formatUsd(holdCents - capturedCents);
+  if (lang === "ja") return `${hold} の与信のうち ${captured} を確定しました。${released} は解放しました。`;
+  return `Captured ${captured} of ${hold}. ${released} released.`;
 }
 
 export function activitySentence(lang: Lang, type: string, opts?: { replay?: boolean; verdict?: string | null }): string {
